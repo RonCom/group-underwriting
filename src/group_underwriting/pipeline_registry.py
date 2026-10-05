@@ -12,7 +12,7 @@ def register_pipelines() -> dict[str, Pipeline]:
     pipelines = dict(find_pipelines(raise_errors=True))
     optional = {
         k: pipelines.pop(k)
-        for k in ("synthetic", "warehouse", "followup", "retest")
+        for k in ("synthetic", "warehouse", "followup", "retest", "holdout")
         if k in pipelines
     }
     pipelines["__default__"] = sum(pipelines.values(), Pipeline([]))
