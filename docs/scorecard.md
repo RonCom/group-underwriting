@@ -1,0 +1,51 @@
+# Pre-registered tests: scorecard (DE-SynPUF Sample 2)
+
+Run 2026-10-05 with the code and rules frozen in `docs/preregistration.md` (amended only for
+Sample 1 → 2 before any data was loaded). One reporting change came after the first run, with no
+change to models or rules: the report now computes the pre-registered AUC difference and prices
+groups with both models, as the Test 1 rule requires (`docs/decisions.md`). Full tables:
+[`results.md`](results.md).
+
+| Test | Prediction | Result | Verdict |
+|---|---|---|---|
+| 0. Signal | Prior-year cost Gini 0.10–0.30 | 0.639 | **Miss** (stronger) |
+| 0. Signal | LightGBM Gini 0.15–0.35 | 0.708 | **Miss** (stronger) |
+| 0. Rule | Move to Synthea if LightGBM Gini < 0.10 | 0.708 | Stay on DE-SynPUF |
+| 1. Cost | LightGBM − GLM Gini within ±0.03, interval covering 0 | +0.012 [0.009–0.015] | **Miss**: within ±0.03 but the interval excludes 0 |
+| 1. Cost | MAE difference under 5% of GLM MAE | −$20 [−40 to +0.3], 0.4% | Hit |
+| 1. Rule | Adopt LightGBM if Gini diff > 0 **and** MAE diff < 0 | MAE interval crosses 0 | **GLM stays model of record** |
+| 2. HCC | AUC at $25k 0.65–0.80 | LightGBM 0.740, GLM 0.739 | Hit |
+| 2. HCC | AUC at $50k 0.65–0.80 | LightGBM 0.718, GLM 0.711 | Hit |
+| 2. HCC | < 50 test claimants above $100k | 10 | Hit |
+| 2. Rule | Adopt LightGBM if AUC diff > 0 at $25k and $50k | +0.001 [−0.004–0.008]; +0.007 [−0.011–0.025] | **Logistic stays** |
+| 3. Tail | GPD shape ξ in 0.0–0.4 above $25k | 0.107 (KS p = 0.30) | Hit |
+| 3. Tail | Actual / expected excess above $50k covers 1 | 0.25 [0.19–0.31] (GLM HCC) | **Miss** |
+| 4. Pricing | Claims actual / expected within 0.90–1.10 | 0.58 [0.57–0.59] (GLM) | **Miss** |
+| 4. Pricing | No band's actual / expected interval excludes 1 | All five exclude 1 | **Miss** |
+| 4. Pricing | 50–99 actual-LR interval ≥ 2× the 500+ bands' width | 0.077 vs 0.018 and 0.014 | Hit |
+| 5. IBNR | Estimate within ±10% of actual at both valuations | +11.2% and +20.9% | **Miss** |
+
+## What drives the misses (post hoc, not pre-registered)
+
+**DE-SynPUF's 2010 claims are thin.** Allowed cost per fee-for-service member-month, all
+members, by year of service:
+
+| Claim type | 2008 | 2009 | 2010 | 2010 / 2009 |
+|---|---|---|---|---|
+| Inpatient | $323 | $325 | $192 | 0.59 |
+| Outpatient | $116 | $144 | $87 | 0.61 |
+| Carrier | $228 | $243 | $168 | 0.69 |
+| Part D | $133 | $152 | $107 | 0.70 |
+
+Claim counts fall by the same proportions (inpatient 28.8 → 17.1 per 1,000 member-months) while
+enrollment doesn't. Nothing visible at the 2009 cutoff predicts this: the 2008 → 2009 trend was
+0.985. So every level-based check on 2010 (Tests 3 and 4) is dominated by a drop in the data, not
+by the pricing method. Ranking checks (Gini, AUC, lift) don't depend on level and are usable.
+
+**IBNR** (Test 5) uses simulated paid dates, so the miss is about the method under a changing mix.
+An untested explanation: inpatient lags are measured from admission month while payment follows
+discharge, and inpatient's share of cost falls in 2010, so factors fit on 2008–09 overstate the
+remaining development. Not verified.
+
+**Data note.** `PROD_SRVC_ID` is close to unique per fill in DE-SynPUF (distinct drugs ≈ fills:
+19.43 vs 19.43 per member in 2009), so "distinct drugs" duplicates "fills".
