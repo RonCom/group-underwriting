@@ -6,11 +6,12 @@ resulting specific and aggregate stop-loss cost per group, then compares those p
 actually happened the following year. Built as Kedro pipelines on CMS DE-SynPUF claims, with a dbt
 feature mart reconciled row for row against the Python features.
 
-> **Status:** run on DE-SynPUF Sample 2 against tests pre-registered before any data was loaded,
-> then a pre-registered follow-up on Sample 3. On an independent population with complete years,
-> group pricing is calibrated (claims actual / expected 0.995 [0.987–1.004] across 207 groups).
-> The original out-of-time test year, 2010, can't check price levels: DE-SynPUF's 2010 claims are
-> 30–40% thinner than 2009's. Scorecard: [`docs/scorecard.md`](docs/scorecard.md).
+> **Status:** three pre-registered rounds on DE-SynPUF Samples 2, 3 and 4 (scorecard:
+> [`docs/scorecard.md`](docs/scorecard.md)). On independent populations with complete years, group
+> pricing is calibrated (claims actual / expected 0.995 and 1.00 across ~205 groups each).
+> LightGBM is now the cost model of record and the tail is spliced at $100k. The original
+> out-of-time year, 2010, can't check price levels: DE-SynPUF's 2010 claims are 30–40% thinner
+> than 2009's.
 
 ## Question
 Using only claims visible at a pricing date, can member-level models price specific and aggregate
@@ -63,8 +64,8 @@ Training: 35,996 members, 2008 features → 2009 cost. Test: 32,833 other member
 
 | Member next-year cost (test) | MAE | Gini | Predicted / actual |
 |---|---|---|---|
-| **Tweedie GLM (model of record)** | $4,980 [4,912–5,044] | 0.540 [0.525–0.555] | 1.72 [1.69–1.75] |
-| Tweedie LightGBM | $4,960 [4,888–5,022] | 0.552 [0.538–0.566] | 1.73 [1.70–1.76] |
+| Tweedie GLM (frozen baseline) | $4,980 [4,912–5,044] | 0.540 [0.525–0.555] | 1.72 [1.69–1.75] |
+| Tweedie LightGBM (model of record after the Sample 4 re-test) | $4,960 [4,888–5,022] | 0.552 [0.538–0.566] | 1.73 [1.70–1.76] |
 | LightGBM − GLM | −$20 [−40 to +0.3] | +0.012 [0.009–0.015] | |
 
 | High-cost claimants (test) | Claimants | Logistic AUC | LightGBM AUC | Difference | Top-decile lift |
@@ -90,7 +91,7 @@ match ([reconciliation](docs/reconciliation.md)). Full real-data run: ~4 minutes
 - **There is signal in DE-SynPUF.** Prior-year cost alone ranks next-year cost with Gini 0.64 on
   2008 → 2009; the models reach 0.69–0.71. The pre-registration expected 0.10–0.35, so the Synthea
   fallback isn't needed.
-- **LightGBM doesn't earn adoption.** It ranks slightly better (+0.012 Gini, interval above 0),
+- **LightGBM doesn't earn adoption on Sample 2** (reversed by the Sample 4 re-test below). It ranks slightly better (+0.012 Gini, interval above 0),
   but its MAE gain crosses zero and its claimant AUC gains are within noise. The GLM and logistic
   baselines stay, per the pre-registered rule.
 - **2010 levels are not usable for pricing tests.** Allowed cost per member-month falls 30–41% from
@@ -124,9 +125,29 @@ Frozen Sample 2 models, Sample 3's 72,271 members (none in Sample 2) in 207 grou
 - **The far tail is overpriced.** Above $100k actual excess is 0.59 [0.42–0.77] of expected (not
   pre-registered): one GPD above $25k is too heavy that far out.
 - **LightGBM looks better here** (MAE −$239, Gini +0.011, both intervals clear of zero), but the
-  adoption rule was spent on Sample 2. A pre-registered re-test on Sample 4 would decide it.
+  adoption rule was spent on Sample 2; the pre-registered re-test on Sample 4 (below) decided it.
 - **2010 relative pricing misses** after removing the overall drop: 50–99 groups run 7% above
   expected, 250–499 groups 4% below.
+
+### Re-test: LightGBM and a spliced tail (DE-SynPUF Sample 4)
+Frozen Sample 2 models on Sample 4 (72,197 members, none in Samples 2 or 3, 205 groups). 8 of 9
+pre-registered predictions hit. Tables: [`docs/retest/results.md`](docs/retest/results.md).
+
+| Excess loss above attachment (Sample 4) | Claimants | Single GPD A/E | Spliced A/E |
+|---|---|---|---|
+| $25,000 | 3,682 | 1.00 [0.96–1.05] | 1.01 [0.97–1.05] |
+| $50,000 | 937 | 0.98 [0.90–1.06] | 1.01 [0.92–1.10] |
+| $100,000 | 88 | 0.78 [0.61–0.99] | 1.02 [0.80–1.29] |
+
+- **LightGBM adopted for cost.** Its gains replicate on a second unseen sample: Gini +0.012
+  [0.010–0.014], MAE −$222 [−237 to −208]. It runs about 2% low on level (group claims A/E 1.02
+  [1.01–1.03] vs the GLM's 1.00), so recalibrating its level is the next challenger.
+- **Logistic stays for claimants.** LightGBM's AUC gain at $50k isn't clear of zero.
+- **Spliced tail adopted.** Above $100k the cost distribution has a bounded tail (ξ₂ = −0.09), so
+  one GPD from $25k overstated far-tail losses. Splicing a second GPD at $100k brings expected
+  excess in line at all three attachments.
+- **The level result replicates:** GLM group claims A/E 1.00 [0.99–1.01], specific A/E 1.00
+  [0.89–1.11], 2 aggregate breaches against 2.4 expected.
 
 The synthetic mode (generated data, used for CI) has its own results in
 [`docs/synthetic/results.md`](docs/synthetic/results.md); a full synthetic run takes ~45 s.
@@ -150,6 +171,10 @@ uv run kedro run --pipeline warehouse
 # Follow-up: frozen models on Sample 3 (download it to data/sample3/01_raw first)
 uv run python -m group_underwriting.download --sample 3 --dest data/sample3/01_raw
 uv run kedro run --env followup --pipeline followup
+
+# Re-test: Sample 4 (upper tail fit uses Sample 2 training + Sample 3)
+uv run python -m group_underwriting.download --sample 4 --dest data/sample4/01_raw
+uv run kedro run --env retest --pipeline retest
 
 uv run pytest
 ```
@@ -185,9 +210,9 @@ tables into Snowflake and the Snowflake-vs-DuckDB reconciliation are not built y
 
 ## Repo layout
 ```
-conf/            Kedro config: base (real data), synthetic, followup, local (git-ignored)
+conf/            Kedro config: base (real data), synthetic, followup, retest, local (git-ignored)
 src/             Kedro pipelines: ingest, features, models, tail, pricing, reporting, runout,
-                 synthetic, warehouse, followup; metrics.py; download.py
+                 synthetic, warehouse, followup, retest; metrics.py; download.py
 dbt/             staging and feature-mart models (DuckDB, Snowflake target)
 docs/            decisions.md, preregistration.md, scorecard.md, results.md; synthetic/
 notebooks/       exploration only
@@ -197,6 +222,8 @@ tests/
 ## To do
 - [x] Real DE-SynPUF Sample 2 run and pre-registered tests 0–5 ([scorecard](docs/scorecard.md))
 - [x] Pre-registered follow-up on Sample 3 and 2010 relative pricing
-- [ ] Pre-registered LightGBM re-test and a second tail segment above $100k, on Sample 4
+- [x] Pre-registered LightGBM re-test and spliced tail on Sample 4
+- [ ] Wire the adopted models (LightGBM cost, spliced tail) into the main pricing pipeline
+- [ ] Pre-registered LightGBM level recalibration, tested on Sample 5
 - [ ] Snowflake load and Snowflake-vs-DuckDB reconciliation
 - [ ] Blog post for roncom.github.io after the real-data run

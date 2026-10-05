@@ -82,3 +82,35 @@ tables: [`followup/results.md`](followup/results.md). **10 of 12 predictions hit
   and isn't re-run here. A pre-registered re-test on another sample would settle it.
 - In 2010, after removing the overall drop, 50–99 groups run 7% above expected and 250–499 groups
   4% below. The 2010 thinning isn't uniform across groups; the cause isn't established.
+
+# Re-test (pre-registered in `docs/preregistration_retest.md`)
+
+Run 2026-10-05: frozen Sample 2 models on DE-SynPUF Sample 4 (72,197 members, none in Samples 2
+or 3; 205 groups), 2008 features → 2009 cost. Full tables: [`retest/results.md`](retest/results.md).
+**8 of 9 predictions hit.**
+
+| # | Prediction | Result | Verdict |
+|---|---|---|---|
+| R1a | LightGBM − GLM Gini +0.005 to +0.020, interval above 0 | +0.012 [0.010–0.014] | Hit |
+| R1b | LightGBM − GLM MAE interval below 0 | −$222 [−237 to −208] | Hit |
+| R1c | AUC difference intervals cover 0 at $25k and $50k | $25k: +0.004 [0.001–0.006]; $50k: +0.004 [−0.001–0.008] | **Miss** at $25k |
+| R1 rule | Cost: adopt LightGBM if R1a and R1b intervals clear 0 | Both clear | **LightGBM adopted for cost** |
+| R1 rule | Claimants: adopt LightGBM if AUC difference > 0 at both | $50k interval covers 0 | **Logistic stays** |
+| R2a | Upper GPD shape ξ₂ in −0.2 to 0.3 | −0.088 (113 exceedances, KS p = 0.99) | Hit |
+| R2b | Single-GPD excess A/E above $100k: interval below 1 | 0.78 [0.61–0.99] | Hit |
+| R2c | Spliced excess A/E above $100k covers 1 | 1.02 [0.80–1.29] | Hit |
+| R2d | Spliced excess A/E above $25k and $50k cover 1 | 1.01 [0.97–1.05]; 1.01 [0.92–1.10] | Hit |
+| R2 rule | Adopt spliced tail if R2c and R2d hold | Both hold | **Spliced tail adopted** |
+| R3a | Group claims A/E (GLM) covers 1 | 1.00 [0.99–1.01] | Hit |
+| R3b | Specific A/E (GLM, single GPD) covers 1 | 1.00 [0.89–1.11] | Hit |
+
+**Reading.**
+- LightGBM's advantage replicates on a second unseen sample with nearly the same size (Gini
+  +0.011 / +0.012, MAE −$239 / −$222), so it becomes the cost model of record.
+- LightGBM's level is about 2% low on both new samples (predicted / actual 0.986 and 0.978, GLM
+  0.997–1.005), so group claims A/E with LightGBM is 1.02 [1.01–1.03]. The adoption rule didn't
+  include calibration. A level recalibration of LightGBM is the obvious next challenger.
+- The upper GPD has a negative shape (a bounded tail), which is why one GPD from $25k overstated
+  losses above $100k. Spliced at $100k, expected excess matches actual at all three attachments.
+- At $100k, LightGBM's claimant AUC is below logistic's (−0.023 [−0.041 to −0.006], 88 claimants;
+  not pre-registered).
