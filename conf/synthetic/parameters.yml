@@ -55,3 +55,10 @@ warehouse:
   fail_on_mismatch: true
   label: synthetic
   report_file: docs/synthetic/reconciliation.md
+
+upper_tail:
+  upper_threshold: 100000
+  extra_features: []
+
+level_calibration:
+  files: []

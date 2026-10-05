@@ -9,6 +9,7 @@ the 2008 -> 2009 signal check. Test members are never touched here.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import lightgbm as lgb
 import numpy as np
@@ -176,3 +177,38 @@ def signal_check(predictions: pd.DataFrame, features: pd.DataFrame) -> pd.DataFr
             "n_members": len(v),
         }
     )
+
+
+def level_calibration(params: dict) -> pd.DataFrame:
+    """One multiplicative level factor per cost model: total actual / total predicted cost on
+    already-seen samples scored by the frozen models (`files`, prediction parquet paths).
+
+    Factor 1.0 when none of the files exist.
+    """
+    frames = [pd.read_parquet(f) for f in params["files"] if Path(f).exists()]
+    missing = [f for f in params["files"] if not Path(f).exists()]
+    if missing:
+        log.warning("Level-calibration files not found, skipped: %s", missing)
+    rows = []
+    for m in ("glm", "gbm"):
+        if frames:
+            p = pd.concat(frames)
+            p = p[p["split"] == "test"]
+            factor = p["target_cost"].sum() / (p[f"pred_{m}"] * p["exposure"]).sum()
+            n = len(p)
+        else:
+            factor, n = 1.0, 0
+        rows.append(
+            {
+                "model": m,
+                "factor": float(factor),
+                "n_members": n,
+                "sources": ", ".join(f for f in params["files"] if Path(f).exists()),
+            }
+        )
+    out = pd.DataFrame(rows)
+    log.info(
+        "Level calibration factors: %s",
+        dict(zip(out["model"], out["factor"].round(4), strict=True)),
+    )
+    return out

@@ -108,3 +108,38 @@ warehouse:
   fail_on_mismatch: true
   label: real
   report_file: docs/reconciliation.md
+
+# Second GPD above $100k (adopted after the Sample 4 re-test). Fit on this run's training
+# members plus already-seen samples; missing files are skipped.
+upper_tail:
+  upper_threshold: 100000
+  extra_features:
+    - data/sample3/04_feature/features.parquet
+
+# Level factor per cost model: actual / predicted on already-seen samples scored by the frozen
+# models. Applied only to variants with calibrate: true.
+level_calibration:
+  files:
+    - data/sample3/07_model_output/predictions.parquet
+    - data/sample4/07_model_output/predictions.parquet
+
+# Model configurations priced side by side.
+pricing_variants:
+  baseline:
+    label: "Baseline: GLM cost, logistic claimants, single GPD"
+    cost: glm
+    claimant: glm
+    tail: single
+    calibrate: false
+  record:
+    label: "Model of record: LightGBM cost, logistic claimants, spliced tail"
+    cost: gbm
+    claimant: glm
+    tail: spliced
+    calibrate: false
+  recalibrated:
+    label: "Challenger: model of record with LightGBM level recalibrated"
+    cost: gbm
+    claimant: glm
+    tail: spliced
+    calibrate: true
