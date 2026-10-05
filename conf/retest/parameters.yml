@@ -1,0 +1,11 @@
+cohorts:
+  split_salt: cohort-split
+  train_share: 0.0
+  train_year: 2008
+  test_year: 2008
+
+upper_tail:
+  upper_threshold: 100000
+
+retest:
+  results_file: docs/retest/results.md
