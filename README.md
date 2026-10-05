@@ -6,11 +6,11 @@ resulting specific and aggregate stop-loss cost per group, then compares those p
 actually happened the following year. Built as Kedro pipelines on CMS DE-SynPUF claims, with a dbt
 feature mart reconciled row for row against the Python features.
 
-> **Status: synthetic data only so far.** The CMS download hosts were blocked from the environment
-> this was built in, so every number below comes from the offline synthetic mode: generated files
-> in the DE-SynPUF layout, with a generator we wrote. They show the pipeline works end to end. They
-> are not findings about Medicare or employer populations. The real-data tests are pre-registered
-> in [`docs/preregistration.md`](docs/preregistration.md) and haven't been run yet.
+> **Status:** run on DE-SynPUF Sample 2 (116k beneficiaries, 11.2M claims) against tests
+> pre-registered before any data was loaded. 6 of 13 predictions hit. Ranking works (test Gini
+> 0.54, high-cost AUC 0.71–0.74), but **2010 cost-level checks fail** because DE-SynPUF's 2010
+> claims are 30–40% thinner than 2009's, a drop in the data that nothing at the pricing date
+> predicts. Scorecard: [`docs/scorecard.md`](docs/scorecard.md).
 
 ## Question
 Using only claims visible at a pricing date, can member-level models price specific and aggregate
@@ -57,47 +57,54 @@ these groups are an age-skewed proxy for a working-age employer population.
 Every interval is a 95% bootstrap that resamples members (member metrics) or groups (group
 metrics), never rows.
 
-## Results (synthetic mode)
-25,000 generated members · 11,104 test members in 44 groups. Full tables:
-[`docs/synthetic/results.md`](docs/synthetic/results.md).
+## Results (DE-SynPUF Sample 2)
+Training: 35,996 members, 2008 features → 2009 cost. Test: 32,833 other members in 101 groups,
+2009 features → 2010 cost. Full tables and figures: [`docs/results.md`](docs/results.md).
 
 | Member next-year cost (test) | MAE | Gini | Predicted / actual |
 |---|---|---|---|
-| Tweedie GLM | $5,088 [4,895–5,288] | 0.504 [0.456–0.545] | 1.16 [1.13–1.20] |
-| Tweedie LightGBM | $4,851 [4,646–5,052] | 0.526 [0.485–0.559] | 1.08 [1.05–1.11] |
-| LightGBM − GLM | −$237 [−292 to −179] | +0.022 [0.009–0.039] | |
+| **Tweedie GLM (model of record)** | $4,980 [4,912–5,044] | 0.540 [0.525–0.555] | 1.72 [1.69–1.75] |
+| Tweedie LightGBM | $4,960 [4,888–5,022] | 0.552 [0.538–0.566] | 1.73 [1.70–1.76] |
+| LightGBM − GLM | −$20 [−40 to +0.3] | +0.012 [0.009–0.015] | |
 
-| High-cost claimants (test, LightGBM) | Claimants | AUC | Top-decile lift |
-|---|---|---|---|
-| > $25,000 | 467 | 0.80 [0.78–0.83] | 4.9× |
-| > $50,000 | 265 | 0.83 [0.79–0.86] | 5.9× |
-| > $100,000 | 24 | 0.39 [0.27–0.49] | 1.2× |
-
-| Pricing by group size (test) | Groups | Priced LR | Actual LR | Claims A/E | Specific A/E |
+| High-cost claimants (test) | Claimants | Logistic AUC | LightGBM AUC | Difference | Top-decile lift |
 |---|---|---|---|---|---|
-| 50–99 | 13 | 0.845 | 0.863 [0.735–1.001] | 1.02 [0.87–1.19] | 1.22 [0.60–2.13] |
-| 100–249 | 21 | 0.859 | 0.776 [0.736–0.821] | 0.90 [0.86–0.96] | 0.72 [0.51–0.96] |
-| 250–499 | 7 | 0.868 | 0.854 [0.805–0.906] | 0.98 [0.93–1.04] | 0.91 [0.54–1.23] |
-| 500+ | 3 | 0.870 | 0.78 | 0.89–0.91 | 0.24–0.50 |
-| All | 44 | 0.864 | 0.803 [0.778–0.837] | 0.93 [0.90–0.97] | 0.81 [0.60–1.05] |
+| > $25,000 | 627 | 0.739 [0.721–0.759] | 0.740 [0.722–0.761] | +0.001 [−0.004–0.008] | 3.5× |
+| > $50,000 | 118 | 0.711 [0.659–0.759] | 0.718 [0.666–0.765] | +0.007 [−0.011–0.025] | 3.5× |
+| > $100,000 | 10 | 0.615 | 0.583 | not tested (10 claimants) | |
 
-Other checks: GPD shape ξ = 0.24 above $25k; actual / expected excess 0.92 [0.80–1.04] above $25k
-and 0.77 [0.59–0.95] above $50k. IBNR error −10.3% (valued 2009-12-31) and −1.4% (2010-12-31).
-dbt mart vs Kedro features: all 22,233 rows and 33 columns match
-([reconciliation](docs/synthetic/reconciliation.md)). Full synthetic run: ~43 s on 4 cores.
+| Pricing by group size (test, GLM) | Groups | Priced LR | Actual LR | Claims A/E | Specific A/E |
+|---|---|---|---|---|---|
+| 50–99 | 28 | 0.868 | 0.542 [0.509–0.586] | 0.62 [0.59–0.67] | 0.53 [0.35–0.74] |
+| 100–249 | 37 | 0.869 | 0.526 [0.504–0.551] | 0.61 [0.58–0.63] | 0.26 [0.12–0.45] |
+| 250–499 | 23 | 0.870 | 0.486 [0.472–0.501] | 0.56 [0.54–0.58] | 0.24 [0.16–0.33] |
+| 500–999 | 8 | 0.870 | 0.518 [0.508–0.526] | 0.60 [0.58–0.60] | 0.16 [0.00–0.38] |
+| 1,000–2,500 | 5 | 0.870 | 0.494 [0.486–0.500] | 0.57 [0.56–0.58] | 0.00 |
+| All | 101 | 0.869 | 0.505 [0.498–0.514] | 0.58 [0.57–0.59] | 0.32 [0.23–0.41] |
 
-**Reading the synthetic numbers.**
-- The 2008 → 2009 trend estimate (1.145) overshoots the generator's 2009 → 2010 change, so 2010
-  is overpriced by ~7% (claims A/E 0.93). Trend from one year of history picks up the cohort's
-  chronic-condition build-up as well as price inflation.
-- LightGBM beats the GLM on MAE and Gini, with both intervals clear of zero. Generated cost isn't
-  log-linear in these features (frailty is hidden, specialty drugs switch on), so this says nothing
-  yet about DE-SynPUF.
-- The $100k model is noise: 24 test claimants.
-- The Tweedie Monte Carlo expects 5.2 aggregate hits and none happened. With the dispersion
-  estimated on uncapped cost, simulated group totals are too wide.
-- The 50–99 band's actual loss-ratio interval is about 2.6× the width of the 250–499 band's: small
-  groups are where pricing error concentrates.
+Other checks: GPD shape ξ = 0.107 above $25k (KS p = 0.30). IBNR error +11.2% (valued
+2009-12-31) and +20.9% (2010-12-31). dbt mart vs Kedro features: all 68,829 rows and 33 columns
+match ([reconciliation](docs/reconciliation.md)). Full real-data run: ~4 minutes on 4 cores.
+
+**Findings**
+- **There is signal in DE-SynPUF.** Prior-year cost alone ranks next-year cost with Gini 0.64 on
+  2008 → 2009; the models reach 0.69–0.71. The pre-registration expected 0.10–0.35, so the Synthea
+  fallback isn't needed.
+- **LightGBM doesn't earn adoption.** It ranks slightly better (+0.012 Gini, interval above 0),
+  but its MAE gain crosses zero and its claimant AUC gains are within noise. The GLM and logistic
+  baselines stay, per the pre-registered rule.
+- **2010 levels are not usable for pricing tests.** Allowed cost per member-month falls 30–41% from
+  2009 to 2010 in every claim type, with claim counts falling the same way. Priced on 2009 levels
+  (trend 0.985), every band shows actual / expected near 0.6 and specific A/E near 0.3. These are
+  misses against the pre-registration, and they measure the data's 2010 drop, not the method.
+- **Small groups carry the most pricing noise.** The 50–99 band's actual loss-ratio interval is 4.3×
+  the width of the 500–999 band's and 5.5× the 1,000+ band's.
+- **Utilization drives the cost model.** Professional (carrier) claim count, second-half cost and
+  total prior cost are the top SHAP drivers; group explanations read like "professional claims
+  22.0 vs 17.7 per member (raises cost 15%)".
+
+The synthetic mode (generated data, used for CI) has its own results in
+[`docs/synthetic/results.md`](docs/synthetic/results.md); a full synthetic run takes ~45 s.
 
 ## Run it
 Requires [uv](https://docs.astral.sh/uv/).
@@ -110,7 +117,7 @@ uv run kedro run --env synthetic --pipeline synthetic
 uv run kedro run --env synthetic
 uv run kedro run --env synthetic --pipeline warehouse   # dbt build + reconciliation
 
-# Real data: DE-SynPUF Sample 2 into data/real/01_raw, then the same pipelines
+# Real data: DE-SynPUF Sample 2 into data/real/01_raw (3 GB), then the same pipelines
 uv run python -m group_underwriting.download            # or unzip the CSVs there by hand
 uv run kedro run
 uv run kedro run --pipeline warehouse
@@ -133,8 +140,8 @@ environment variables) and the models use portable macros for dates and regex. L
 tables into Snowflake and the Snowflake-vs-DuckDB reconciliation are not built yet.
 
 ## Limits
-- **Synthetic numbers only** until the real-data run. The generator's structure decides what the
-  models can find.
+- **2010 is thin in DE-SynPUF.** Claims per member-month drop 30–40% from 2009, so the
+  out-of-time test year can't check price levels. Ranking results stand.
 - **DE-SynPUF itself is synthetic.** CMS warns it does not preserve relationships between
   variables, so year-over-year signal may be weak. Pre-registered Test 0 decides whether to move
   to Synthea.
@@ -153,12 +160,14 @@ conf/            Kedro config: base (real data), synthetic, local (git-ignored)
 src/             Kedro pipelines: ingest, features, models, tail, pricing, reporting, runout,
                  synthetic, warehouse; metrics.py; download.py
 dbt/             staging and feature-mart models (DuckDB, Snowflake target)
-docs/            decisions.md, preregistration.md, results (synthetic/ for now)
+docs/            decisions.md, preregistration.md, scorecard.md, results.md; synthetic/
 notebooks/       exploration only
 tests/
 ```
 
 ## To do
-- [ ] Real DE-SynPUF Sample 2 run and pre-registered tests 0–5
+- [x] Real DE-SynPUF Sample 2 run and pre-registered tests 0–5 ([scorecard](docs/scorecard.md))
+- [ ] Follow-up (new pre-registration): a level check that doesn't depend on 2010 volume, e.g.
+      2008 → 2009 out-of-time on held-out members, or recalibrating to 2010's observed level
 - [ ] Snowflake load and Snowflake-vs-DuckDB reconciliation
 - [ ] Blog post for roncom.github.io after the real-data run
