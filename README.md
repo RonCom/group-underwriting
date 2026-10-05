@@ -20,7 +20,7 @@ the priced one, and how much worse is that for small groups?
 ## Data
 | Source | Grain | Used for |
 |---|---|---|
-| DE-SynPUF Beneficiary Summary 2008–2010 (Sample 1) | member × year | Eligibility, age, sex, ESRD, 11 chronic-condition flags, coverage months, state/county |
+| DE-SynPUF Beneficiary Summary 2008–2010 (Sample 2) | member × year | Eligibility, age, sex, ESRD, 11 chronic-condition flags, coverage months, state/county |
 | DE-SynPUF Inpatient, Outpatient, Carrier (A+B) claims | claim | Allowed cost by setting, stays, days, visit counts |
 | DE-SynPUF Prescription Drug Events | fill | Pharmacy cost, fills, distinct drugs, specialty fills |
 
@@ -110,7 +110,7 @@ uv run kedro run --env synthetic --pipeline synthetic
 uv run kedro run --env synthetic
 uv run kedro run --env synthetic --pipeline warehouse   # dbt build + reconciliation
 
-# Real data: DE-SynPUF Sample 1 into data/real/01_raw, then the same pipelines
+# Real data: DE-SynPUF Sample 2 into data/real/01_raw, then the same pipelines
 uv run python -m group_underwriting.download            # or unzip the CSVs there by hand
 uv run kedro run
 uv run kedro run --pipeline warehouse
@@ -159,6 +159,6 @@ tests/
 ```
 
 ## To do
-- [ ] Real DE-SynPUF Sample 1 run and pre-registered tests 0–5
+- [ ] Real DE-SynPUF Sample 2 run and pre-registered tests 0–5
 - [ ] Snowflake load and Snowflake-vs-DuckDB reconciliation
 - [ ] Blog post for roncom.github.io after the real-data run

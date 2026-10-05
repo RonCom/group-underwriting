@@ -1,10 +1,11 @@
-"""Download and unzip DE-SynPUF Sample 1 into data/real/01_raw.
+"""Download and unzip a DE-SynPUF sample (default: Sample 2) into data/real/01_raw.
 
-Usage: uv run python -m group_underwriting.download [--sample 1] [--dest data/real/01_raw]
+Usage: uv run python -m group_underwriting.download [--sample 2] [--dest data/real/01_raw]
 
-The URLs follow the layout CMS has used for these files; they were not reachable from the
-environment this project was built in, so check them against the CMS DE-SynPUF page
-(Sample 1) if a download fails and pass the right ones with --url.
+Beneficiary, inpatient and outpatient files are on www.cms.gov; carrier and Part D files on
+downloads.cms.gov (checked 2026-10-05). Sample 1's 2010 Beneficiary Summary file is not hosted:
+the CMS Sample 1 page links to Sample 20's file instead, and the Sample 1 URL returns 404. Pass
+other URLs with --url if CMS moves the files.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-CMS = "https://www.cms.gov/Research-Statistics-Data-and-Systems/Downloadable-Public-Use-Files/SynPUFs/Downloads"
+CMS = "https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads"
 FILES = "https://downloads.cms.gov/files"
 
 
@@ -50,7 +51,7 @@ def fetch(url: str, dest: Path) -> None:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--sample", type=int, default=1)
+    ap.add_argument("--sample", type=int, default=2)
     ap.add_argument("--dest", default="data/real/01_raw")
     ap.add_argument("--url", action="append", help="download these URLs instead of the defaults")
     args = ap.parse_args()

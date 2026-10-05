@@ -4,7 +4,7 @@ Dated log of choices that change what the numbers mean. Newest last.
 
 ## 2026-10-05: initial build
 
-**Data source.** CMS DE-SynPUF Sample 1 (Beneficiary Summary 2008–2010, Inpatient, Outpatient,
+**Data source.** CMS DE-SynPUF Sample 1 (changed to Sample 2 below) (Beneficiary Summary 2008–2010, Inpatient, Outpatient,
 Carrier A/B, Prescription Drug Events). The CMS download hosts were blocked from the environment
 the project was built in, so the first build runs only on generated data (`--env synthetic`). The
 Synthea fallback in CLAUDE.md is triggered by the pre-registered signal check
@@ -82,3 +82,13 @@ report on real-data runs (`drift` extra).
 
 **Blog post.** Deferred until the real-data run: a write-up of synthetic results would describe
 the generator, not DE-SynPUF.
+
+## 2026-10-05: DE-SynPUF Sample 2 instead of Sample 1
+
+CMS no longer hosts Sample 1's 2010 Beneficiary Summary file: the Sample 1 download page links to
+`de1_0_2010_beneficiary_summary_file_sample_20.zip`, and every Sample 1 URL variant returns 404.
+The 2010 file is required (test-year enrollment and exposure). Sample 2 has all eight files, so
+the project uses Sample 2. Samples are random, equal-sized draws from the same synthesis, so the
+pre-registered predictions are unchanged. No DE-SynPUF data had been loaded or analyzed when this
+was decided (only the Sample 1 2008 and 2009 beneficiary files had been downloaded by the failed
+download run; they were deleted unopened).
