@@ -269,4 +269,4 @@ tests/
 - [x] Wire the adopted models into the main pricing pipeline (`pricing_variants`)
 - [x] Pre-registered LightGBM level recalibration, tested on Sample 5
 - [ ] Run the Snowflake load and reconciliation (built; waiting on credentials)
-- [ ] Blog post for roncom.github.io after the real-data run
+- [x] Blog post draft for roncom.github.io (`docs/blog/posts/group-underwriting.md`; not yet published to the site)
