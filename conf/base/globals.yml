@@ -1,0 +1,3 @@
+# Root for data files. `--env synthetic` points this at generated data;
+# `--params data_root=...` overrides both.
+data_root: data/real
