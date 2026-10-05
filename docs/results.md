@@ -100,18 +100,18 @@ Generalized Pareto above $25,000 on training members' 2009 cost: shape ξ = 0.10
 | Baseline: GLM cost, logistic claimants, single GPD | 500-999 | 8 | 6,018 | 0.870 | 0.518 [0.508–0.526] | 0.60 [0.58–0.60] | 0.16 [0.00–0.38] | 0 (0.0) |
 | Baseline: GLM cost, logistic claimants, single GPD | 1000-2500 | 5 | 10,162 | 0.870 | 0.494 [0.486–0.500] | 0.57 [0.56–0.58] | 0.00 [0.00–0.00] | 0 (0.0) |
 | Baseline: GLM cost, logistic claimants, single GPD | All | 101 | 32,833 | 0.869 | 0.505 [0.498–0.514] | 0.58 [0.57–0.59] | 0.32 [0.23–0.41] | 0 (1.5) |
-| Model of record: LightGBM cost, logistic claimants, spliced tail | 50-99 | 28 | 2,095 | 0.868 | 0.537 [0.502–0.582] | 0.62 [0.58–0.67] | 0.53 [0.35–0.74] | 0 (1.1) |
-| Model of record: LightGBM cost, logistic claimants, spliced tail | 100-249 | 37 | 5,950 | 0.869 | 0.519 [0.497–0.545] | 0.60 [0.57–0.63] | 0.27 [0.13–0.47] | 0 (0.5) |
-| Model of record: LightGBM cost, logistic claimants, spliced tail | 250-499 | 23 | 8,608 | 0.870 | 0.485 [0.471–0.499] | 0.56 [0.54–0.57] | 0.25 [0.17–0.34] | 0 (0.0) |
-| Model of record: LightGBM cost, logistic claimants, spliced tail | 500-999 | 8 | 6,018 | 0.870 | 0.513 [0.506–0.520] | 0.59 [0.58–0.60] | 0.21 [0.00–0.49] | 0 (0.0) |
-| Model of record: LightGBM cost, logistic claimants, spliced tail | 1000-2500 | 5 | 10,162 | 0.870 | 0.491 [0.483–0.496] | 0.56 [0.56–0.57] | 0.00 [0.00–0.00] | 0 (0.0) |
-| Model of record: LightGBM cost, logistic claimants, spliced tail | All | 101 | 32,833 | 0.869 | 0.501 [0.494–0.510] | 0.58 [0.57–0.59] | 0.33 [0.24–0.42] | 0 (1.6) |
-| Challenger: model of record with LightGBM level recalibrated | 50-99 | 28 | 2,095 | 0.868 | 0.528 [0.493–0.572] | 0.61 [0.57–0.66] | 0.53 [0.35–0.74] | 0 (1.0) |
-| Challenger: model of record with LightGBM level recalibrated | 100-249 | 37 | 5,950 | 0.869 | 0.510 [0.488–0.535] | 0.59 [0.56–0.62] | 0.27 [0.13–0.47] | 0 (0.6) |
-| Challenger: model of record with LightGBM level recalibrated | 250-499 | 23 | 8,608 | 0.870 | 0.476 [0.463–0.490] | 0.55 [0.53–0.56] | 0.25 [0.17–0.34] | 0 (0.0) |
-| Challenger: model of record with LightGBM level recalibrated | 500-999 | 8 | 6,018 | 0.870 | 0.504 [0.497–0.511] | 0.58 [0.57–0.59] | 0.21 [0.00–0.49] | 0 (0.0) |
-| Challenger: model of record with LightGBM level recalibrated | 1000-2500 | 5 | 10,162 | 0.870 | 0.482 [0.475–0.487] | 0.55 [0.55–0.56] | 0.00 [0.00–0.00] | 0 (0.0) |
-| Challenger: model of record with LightGBM level recalibrated | All | 101 | 32,833 | 0.869 | 0.492 [0.485–0.501] | 0.57 [0.56–0.58] | 0.33 [0.24–0.42] | 0 (1.6) |
+| Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | 50-99 | 28 | 2,095 | 0.868 | 0.537 [0.502–0.582] | 0.62 [0.58–0.67] | 0.53 [0.35–0.74] | 0 (1.1) |
+| Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | 100-249 | 37 | 5,950 | 0.869 | 0.519 [0.497–0.545] | 0.60 [0.57–0.63] | 0.27 [0.13–0.47] | 0 (0.5) |
+| Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | 250-499 | 23 | 8,608 | 0.870 | 0.485 [0.471–0.499] | 0.56 [0.54–0.57] | 0.25 [0.17–0.34] | 0 (0.0) |
+| Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | 500-999 | 8 | 6,018 | 0.870 | 0.513 [0.506–0.520] | 0.59 [0.58–0.60] | 0.21 [0.00–0.49] | 0 (0.0) |
+| Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | 1000-2500 | 5 | 10,162 | 0.870 | 0.491 [0.483–0.496] | 0.56 [0.56–0.57] | 0.00 [0.00–0.00] | 0 (0.0) |
+| Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | All | 101 | 32,833 | 0.869 | 0.501 [0.494–0.510] | 0.58 [0.57–0.59] | 0.33 [0.24–0.42] | 0 (1.6) |
+| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 50-99 | 28 | 2,095 | 0.868 | 0.528 [0.493–0.572] | 0.61 [0.57–0.66] | 0.53 [0.35–0.74] | 0 (1.0) |
+| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 100-249 | 37 | 5,950 | 0.869 | 0.510 [0.488–0.535] | 0.59 [0.56–0.62] | 0.27 [0.13–0.47] | 0 (0.6) |
+| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 250-499 | 23 | 8,608 | 0.870 | 0.476 [0.463–0.490] | 0.55 [0.53–0.56] | 0.25 [0.17–0.34] | 0 (0.0) |
+| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 500-999 | 8 | 6,018 | 0.870 | 0.504 [0.497–0.511] | 0.58 [0.57–0.59] | 0.21 [0.00–0.49] | 0 (0.0) |
+| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 1000-2500 | 5 | 10,162 | 0.870 | 0.482 [0.475–0.487] | 0.55 [0.55–0.56] | 0.00 [0.00–0.00] | 0 (0.0) |
+| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | All | 101 | 32,833 | 0.869 | 0.492 [0.485–0.501] | 0.57 [0.56–0.58] | 0.33 [0.24–0.42] | 0 (1.6) |
 
 ![Group A/E](figures/group_actual_to_expected.png)
 
