@@ -124,3 +124,14 @@ pre-registered rules:
 - **Tail: spliced** (GPD above $25k up to $100k, second GPD above $100k).
 The main `kedro run` still produces the original frozen Sample 2 outputs; the adopted tail lives
 in the `retest` pipeline until it is wired into pricing.
+
+## 2026-10-05: adopted models wired into the main pipeline
+
+Main `kedro run` pricing now compares named configurations (`pricing_variants`): the frozen
+baseline (GLM, logistic, single GPD), the model of record (LightGBM cost, logistic claimants,
+spliced tail) and a challenger (model of record with LightGBM's level recalibrated). The upper GPD
+is fit on this run's training members plus already-seen samples listed in
+`upper_tail.extra_features`; with fewer than 30 costs above $100k it falls back to the single GPD.
+The level factor per cost model is total actual / total predicted on already-seen samples scored
+by the frozen models (`level_calibration.files`: Samples 3 and 4; LightGBM 1.018, GLM 0.999).
+Retraining reproduces the frozen models exactly (same metrics to the dollar).
