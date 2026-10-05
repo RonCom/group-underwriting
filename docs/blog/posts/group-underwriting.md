@@ -18,9 +18,9 @@ Pricing both comes down to two questions. What will this group cost next year? A
 that cost sits in the tail?
 
 I built a pipeline that answers both from member-level medical and pharmacy claims, prices
-synthetic employer groups, and then checks the price against what the groups actually cost the
-following year. This post covers the design choices, what the first test got wrong and why, and
-how three more rounds on fresh populations settled what the model of record should be.
+synthetic employer groups, and then checks the price against what the groups cost the
+following year. The first test missed on price level; three more rounds on new populations found
+why and settled the model of record.
 
 <!-- more -->
 
@@ -33,10 +33,10 @@ how three more rounds on fresh populations settled what the model of record shou
     - **Stack:** Python, Kedro, LightGBM, DuckDB, dbt (reconciled row for row with the Python features), MLflow, uv. Code: [github.com/RonCom/group-underwriting](https://github.com/RonCom/group-underwriting).
 
 !!! warning "Synthetic Medicare data, synthetic employers"
-    DE-SynPUF is synthetic: CMS warns it does not preserve all relationships between variables.
+    DE-SynPUF is synthetic: CMS warns it doesn't preserve all relationships between variables.
     Its members are 65+ or disabled, so these "employer groups" are an age-skewed proxy for a
-    working population, and the costs are Medicare-level. The point is the method and how it was
-    tested, not the dollar figures.
+    working population. The dollar figures are Medicare-level and don't transfer to an employer
+    book; the tests of whether prices match outcomes do.
 
 ## The problem in pricing terms
 
@@ -48,9 +48,6 @@ For a group *g* with a specific deductible *d*, the pieces are:
 - **Expected aggregate losses:** E[(net claims − attachment)⁺], where net claims are capped at the
   deductible per member and the attachment is 125% of expected net claims.
 
-The first is a prediction problem, the second a tail problem, the third a distribution problem.
-Each needed different tools.
-
 ## Design choice 1: features as of a pricing date, with runout
 
 An underwriter pricing a renewal sees claims *incurred* through the cutoff, but only those already
@@ -59,13 +56,14 @@ partly paid history would make every prediction look cheaper than it should.
 
 So every feature is built as of December 31 of the feature year, from claims incurred that year
 and paid within three months of the cutoff, the same rule in training and scoring. DE-SynPUF has no
-paid date, so I simulated one per claim from a lag distribution by claim type, which also gave a
-monthly development triangle for a chain-ladder IBNR estimate. Because the lags are simulated, that
-part tests the method rather than real Medicare payment speed, and I report it that way.
+paid date, so I simulated one per claim from a lag distribution by claim type. The same paid
+dates feed a monthly development triangle for a chain-ladder IBNR estimate. Since I chose the lags,
+the IBNR results test the chain-ladder code against those lags and say nothing about Medicare
+payment speed.
 
-The 32 features are plain: age, sex, chronic-condition flags, enrollment months, cost by setting,
-second-half cost, the largest claim, visit and fill counts. Race is in the data and deliberately
-left out of pricing.
+The 32 features: age, sex, chronic-condition flags, enrollment months, cost by setting,
+second-half cost, the largest claim, visit and fill counts. Race is in the data and left out of
+pricing.
 
 ## Design choice 2: out of time, and out of population
 
@@ -75,7 +73,7 @@ and no group appears on both sides.
 
 Employer groups don't exist in Medicare data, so I built them: within each half, members are
 sorted by state and county and cut into blocks whose sizes are drawn from five bands (50–99 up to
-1,000–2,500 lives). Groups end up geographically local, as real employers are.
+1,000–2,500 lives). Groups end up geographically local, as employers' workforces are.
 
 Cost models predict an annualized rate with exposure (enrolled months) as the weight, under a
 Tweedie loss, which handles the large share of members with little or no cost and the long right
@@ -95,17 +93,17 @@ its gain clears zero; every miss gets reported. Four rounds, four pre-registrati
 | 3. Re-test | Sample 4, 2008 → 2009 | 8 of 9 |
 | 4. Holdout | Sample 5, 2008 → 2009 | 6 of 7 |
 
-## Round 1: strong ranking, wrong level
+## Round 1: ranking works, level misses
 
 The signal check came back far stronger than I predicted. On 2008 → 2009, prior-year cost alone
 ranked next-year cost with a Gini of **0.64**; the GLM and LightGBM reached **0.69** and **0.71**.
 I had predicted 0.10–0.35, given CMS's warning about the synthetic data. High-cost claimant AUCs
 landed in the predicted range (0.74 at $25k, 0.71 at $50k).
 
-Pricing failed badly. Group claims came in at **0.58 of expected** in every size band. Specific
-losses came in at 0.32 of expected.
+Pricing missed. Group claims came in at **0.58 of expected**, with every size band between 0.56
+and 0.62. Specific losses came in at 0.32 of expected.
 
-The cause was in the data, not the model:
+The cause is in the data:
 
 ![Allowed cost per member-month by year, DE-SynPUF Sample 2](../../assets/group-underwriting/claims_by_year.png)
 
@@ -119,8 +117,8 @@ zero), but its MAE gain interval crossed zero (−$40 to +$0.28), and the rule n
 
 ## Round 2: test the level where the years are complete
 
-DE-SynPUF stops in 2010, and no other free claims source covers later years, so more years
-weren't an option. More *people* were: CMS publishes 20 independent samples. I froze the Sample 2
+DE-SynPUF stops in 2010, and no other free claims source covers later years. CMS does publish 20
+independent samples, so the next test used new members on complete years. I froze the Sample 2
 models, wrote down new predictions, and only then downloaded Sample 3: 72,271 members, none of
 them in Sample 2, 207 groups, scored 2008 → 2009.
 
@@ -169,21 +167,20 @@ Pareto tail.
 The one miss: groups of 250–499 lives came in 2% below expected with every configuration. I
 don't know why yet.
 
-## Small groups are where pricing risk lives
+## Small groups have the widest loss-ratio swings
 
-Expected cost per member is the easy part. The hard part is that a group of 60 lives has a handful
-of large claimants in a bad year and none in a good one:
+A few large claimants move a 60-life group's loss ratio much more than a 2,000-life group's:
 
 ![Actual loss ratio by group size band](../../assets/group-underwriting/loss_ratio_by_band.png)
 
 The 50–99 band's interval is 2.3–3.5× as wide as the 1,000+ band's on Samples 3–5, and 5.5× as
-wide on Sample 2. That spread is what specific stop-loss deductibles and credibility
-weighting exist for. Here the deductible steps from $25k for the smallest groups to $100k for 500+.
+wide on Sample 2. A lower specific deductible caps how much of that swing the employer keeps, so
+the deductible here steps from $25k for 50–99 lives to $100k for 500+.
 
-One more pattern worth watching: aggregate attachments were breached at or below the expected rate
-in every complete-year run (pooled: 4 observed against 7.6 expected, Poisson P(≤ 4) = 0.12). Not
-significant, but consistent. The Tweedie simulation that spreads group totals is probably a little
-too wide, which would mean the aggregate layer is priced a little high.
+Aggregate attachments were breached at or below the expected rate in all three complete-year runs
+(pooled: 4 observed against 7.6 expected, Poisson P(≤ 4) = 0.12). That's not significant, and the
+direction is the same each time. If it holds, the Tweedie simulation that spreads group totals is
+too wide and the aggregate layer is priced a little high.
 
 ## Explaining a group's price
 
@@ -215,24 +212,11 @@ cost, ahead of any single chronic condition.
 
 ## Limits
 
-- **Synthetic claims, synthetic employers.** DE-SynPUF is a synthetic Medicare population; the
-  groups are built, not observed. Group-level correlation comes only from geography.
+- **Synthetic claims, synthetic employers.** DE-SynPUF is a synthetic Medicare population, and I
+  built the groups. Group-level correlation comes only from geography.
 - **No plan design.** Allowed cost only: no employee cost sharing, network discounts, lasers, or
   run-in / run-out contract terms.
-- **Paid dates are simulated,** so the runout and IBNR results test the method, not CMS payment
-  patterns. The chain-ladder estimate missed its ±10% target (+11% and +21%).
+- **Paid dates are simulated,** so the runout and IBNR results test the chain-ladder method
+  against lags I chose. The estimate missed its ±10% target (+11% and +21%).
 - **2010 is unusable for levels** in DE-SynPUF, so the out-of-time test only checks ranking; the
   level tests are same-period tests on independent populations.
-
-## What I'd do with a captive's data
-
-Real employer groups bring what this data can't: plan design, industry, group-level history over
-several renewals, and claims that are actually correlated within a group. The structure would carry
-over unchanged: features as of the pricing date with runout, a frozen baseline and pre-registered
-challengers, a tail fit that's checked where it matters (above the deductible, not on average), and
-intervals that resample groups. With multi-year group history, the next step is credibility
-weighting between a group's own experience and the model, which is where small-group pricing
-actually gets decided.
-
-The code, pre-registrations and every result are at
-[github.com/RonCom/group-underwriting](https://github.com/RonCom/group-underwriting).
