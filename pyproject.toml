@@ -26,6 +26,10 @@ drift = [
 dbt = [
     "dbt-duckdb>=1.11.0",
 ]
+snowflake = [
+    "dbt-snowflake>=1.12.1",
+    "snowflake-connector-python>=4.8.0",
+]
 
 [project.scripts]
 group-underwriting = "group_underwriting.__main__:main"
