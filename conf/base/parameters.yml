@@ -1,0 +1,111 @@
+raw_dir: ${runtime_params:data_root,${globals:data_root}}/01_raw
+
+synthetic:
+  raw_dir: ${runtime_params:data_root,${globals:data_root}}/01_raw
+  seed: 7
+  n_members: 20000
+  annual_trend: 1.05
+
+# DE-SynPUF has no paid date; lag from service end to payment is simulated per source.
+paid_lag:
+  seed: 11
+  lag:
+    IP:  {min_days: 7, mean_days: 40, shape: 1.5, late_share: 0.05, late_max_days: 365}
+    OP:  {min_days: 5, mean_days: 25, shape: 2.0, late_share: 0.03, late_max_days: 365}
+    CAR: {min_days: 3, mean_days: 20, shape: 2.0, late_share: 0.03, late_max_days: 365}
+    RX:  {min_days: 0, mean_days: 2,  shape: 1.0, late_share: 0.01, late_max_days: 60}
+
+cohorts:
+  split_salt: cohort-split
+  train_share: 0.5
+  train_year: 2008   # features 2008 -> target 2009
+  test_year: 2009    # features 2009 -> target 2010
+
+groups:
+  seed: 3
+  salt: group-assign
+  size_bands:
+    - {min: 50,   max: 99,   weight: 0.30}
+    - {min: 100,  max: 249,  weight: 0.35}
+    - {min: 250,  max: 499,  weight: 0.20}
+    - {min: 500,  max: 999,  weight: 0.10}
+    - {min: 1000, max: 2500, weight: 0.05}
+
+features:
+  runout_months: 3            # claims paid > 3 months after the cutoff are not visible
+  specialty_rx_threshold: 1000
+
+attachment_points: [25000, 50000, 100000]
+
+models:
+  seed: 42
+  validation_salt: inner-val
+  validation_share: 0.2
+  tweedie_power: 1.5
+  glm_alpha: 0.001
+  logit_C: 1.0
+  max_rounds: 2000
+  early_stopping_rounds: 50
+  lgbm:
+    learning_rate: 0.03
+    num_leaves: 15
+    min_data_in_leaf: 100
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 1
+    lambda_l2: 1.0
+  lgbm_hcc:
+    learning_rate: 0.03
+    num_leaves: 7
+    min_data_in_leaf: 100
+    feature_fraction: 0.8
+    lambda_l2: 1.0
+
+tail:
+  threshold: 25000            # must be one of attachment_points
+  hcc_model: gbm
+
+pricing:
+  seed: 5
+  n_sims: 1000
+  n_boot: 500
+  aggregate_corridor: 1.25
+  load: 0.15
+  specific_deductible_by_band:
+    "50-99": 25000
+    "100-249": 50000
+    "250-499": 50000
+    "500-999": 100000
+    "1000-2500": 100000
+
+ibnr:
+  valuation_dates: ["2009-12-31", "2010-12-31"]
+  history_months: 24
+  max_lag_months: 24
+
+reporting:
+  seed: 9
+  n_boot: 500
+  shap_sample: 3000
+  top_groups: 5
+  docs_dir: docs
+  results_file: docs/results.md
+  figures_dir: docs/figures
+  label: real
+  evidently_dir: ${runtime_params:data_root,${globals:data_root}}/08_reporting
+  evidently: true
+  mlflow:
+    enabled: true
+    tracking_uri: sqlite:///mlflow.db
+    experiment: group-underwriting
+    register_models: true
+
+warehouse:
+  target: duckdb             # or snowflake (needs SNOWFLAKE_* env vars and RAW/KEDRO tables)
+  data_root: ${runtime_params:data_root,${globals:data_root}}
+  db_path: ${runtime_params:data_root,${globals:data_root}}/05_model_input/warehouse.duckdb
+  runout_months: 3
+  specialty_rx_threshold: 1000
+  fail_on_mismatch: true
+  label: real
+  report_file: docs/reconciliation.md

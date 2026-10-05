@@ -1,0 +1,101 @@
+_parquet: &parquet
+  type: pandas.ParquetDataset
+
+_pickle: &pickle
+  type: pickle.PickleDataset
+
+members:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/02_intermediate/members.parquet
+
+claims:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/02_intermediate/claims.parquet
+
+member_groups:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/03_primary/member_groups.parquet
+
+features:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/04_feature/features.parquet
+
+cost_models:
+  <<: *pickle
+  filepath: ${runtime_params:data_root,${globals:data_root}}/06_models/cost_models.pkl
+
+hcc_models:
+  <<: *pickle
+  filepath: ${runtime_params:data_root,${globals:data_root}}/06_models/hcc_models.pkl
+
+predictions:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/predictions.parquet
+
+signal_check:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/signal_check.parquet
+
+ibnr_completion:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/ibnr_completion.parquet
+
+ibnr_estimates:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/ibnr_estimates.parquet
+
+tail_fit:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/tail_fit.parquet
+
+mean_excess:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/mean_excess.parquet
+
+tail_qq:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/tail_qq.parquet
+
+member_excess:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/member_excess.parquet
+
+group_pricing:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/group_pricing.parquet
+
+pricing_by_band:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/pricing_by_band.parquet
+
+trend:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/03_primary/trend.parquet
+
+cost_metrics:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/cost_metrics.parquet
+
+group_metrics:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/group_metrics.parquet
+
+hcc_metrics:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/hcc_metrics.parquet
+
+excess_metrics:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/excess_metrics.parquet
+
+group_drivers:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/group_drivers.parquet
+
+feature_drift:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/feature_drift.parquet
+
+reconciliation:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/08_reporting/reconciliation.parquet
