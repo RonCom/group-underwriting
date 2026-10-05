@@ -1,13 +1,13 @@
 -- Point-in-time claim features and next-year target for each (member, feature year) the Kedro
 -- cohort step selected. Mirrors group_underwriting.pipelines.features.nodes.build_features.
-WITH rows AS (
+WITH cohort AS (
     SELECT member_id, feature_year,
            CAST(CAST(feature_year AS VARCHAR) || '-12-31' AS DATE) AS cutoff
     FROM {{ source('kedro', 'member_groups') }}
 ),
 past AS (
-    SELECT r.member_id, r.feature_year, c.*
-    FROM rows r
+    SELECT r.member_id, r.feature_year, c.source, c.from_dt, c.allowed, c.ip_days, c.ndc
+    FROM cohort r
     JOIN {{ ref('stg_claims') }} c
       ON c.member_id = r.member_id
      AND EXTRACT(year FROM c.from_dt) = r.feature_year
@@ -36,7 +36,7 @@ claim_features AS (
 ),
 target AS (
     SELECT r.member_id, r.feature_year, SUM(c.allowed) AS target_cost
-    FROM rows r
+    FROM cohort r
     JOIN {{ ref('stg_claims') }} c
       ON c.member_id = r.member_id AND EXTRACT(year FROM c.from_dt) = r.feature_year + 1
     GROUP BY 1, 2
@@ -65,7 +65,7 @@ SELECT
     COALESCE(f.{{ c }}, 0) AS {{ c }},
     {% endfor -%}
     COALESCE(t.target_cost, 0) AS target_cost
-FROM rows r
+FROM cohort r
 JOIN {{ ref('stg_members') }} m ON m.member_id = r.member_id AND m.year = r.feature_year
 LEFT JOIN claim_features f ON f.member_id = r.member_id AND f.feature_year = r.feature_year
 LEFT JOIN target t ON t.member_id = r.member_id AND t.feature_year = r.feature_year
