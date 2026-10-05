@@ -92,3 +92,15 @@ the project uses Sample 2. Samples are random, equal-sized draws from the same s
 pre-registered predictions are unchanged. No DE-SynPUF data had been loaded or analyzed when this
 was decided (only the Sample 1 2008 and 2009 beneficiary files had been downloaded by the failed
 download run; they were deleted unopened).
+
+## 2026-10-05: reporting completed for the pre-registered rules (after the first real run)
+
+The first real-data run showed the report lacked two things the pre-registration requires: the
+LightGBM − GLM AUC difference (Test 2 rule) and pricing with the GLM when LightGBM isn't adopted
+(Test 1 rule). Both were added; models, features, parameters and rules are unchanged, and the
+saved models were reused. The tail's expected excess is now computed from both HCC models
+(`tail.hcc_model` parameter removed).
+
+The GLM remains the cost and claimant model of record (Test 1 and 2 rules). DE-SynPUF's 2010
+claim volume is 30–40% below 2009 (`docs/scorecard.md`); no adjustment for it is made in the
+frozen run.
