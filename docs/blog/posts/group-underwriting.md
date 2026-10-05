@@ -30,7 +30,7 @@ why and settled the model of record.
     - **Result:** on populations no model had seen, group claims came in at **0.995–1.00 of expected** across ~205 groups per sample. The final configuration hit **0.999 [0.990–1.007]** on the last holdout.
     - **What the first test got wrong:** the out-of-time year (2010) came in at 0.58 of expected because DE-SynPUF's 2010 claims are 36% thinner than 2009's, a data artifact no pricing method could foresee.
     - **What changed along the way:** LightGBM replaced the GLM only after its gain replicated on a second unseen sample; a second Pareto segment above $100k fixed a 30% overstatement of far-tail losses; one level factor fixed LightGBM's 2% low bias.
-    - **Stack:** Python, Kedro, LightGBM, DuckDB, dbt (reconciled row for row with the Python features), MLflow, uv. Code: [github.com/RonCom/group-underwriting](https://github.com/RonCom/group-underwriting).
+    - **Stack:** Python, Kedro, LightGBM, DuckDB and Snowflake, dbt (reconciled row for row with the Python features), MLflow, uv. Code: [github.com/RonCom/group-underwriting](https://github.com/RonCom/group-underwriting).
 
 !!! warning "Synthetic Medicare data, synthetic employers"
     DE-SynPUF is synthetic: CMS warns it doesn't preserve all relationships between variables.
@@ -203,8 +203,8 @@ cost, ahead of any single chronic condition.
   and one environment per pre-registered round, so each round reruns with one command and its
   frozen inputs are explicit in config.
 - **dbt on DuckDB, reconciled row for row:** the same features rebuilt in SQL from the raw CSVs
-  match the Python features on all 68,829 member-years and 33 columns. A Snowflake target and
-  loader are written and waiting on credentials.
+  match the Python features on all 68,829 member-years and 33 columns. The same dbt models
+  build in Snowflake from the same raw files, and Snowflake matches DuckDB row for row.
 - **MLflow** tracks runs and registers the cost model; **Evidently** reports feature drift between
   scoring years; **uv** locks dependencies.
 - **A synthetic-data mode** generates DE-SynPUF-shaped files and runs the whole pipeline offline in
