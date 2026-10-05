@@ -44,7 +44,7 @@ def _key_path() -> str:
         raise RuntimeError("Set SNOWFLAKE_PRIVATE_KEY (PEM text) or SNOWFLAKE_PRIVATE_KEY_PATH")
     pem = pem.replace("\\n", "\n").strip() + "\n"
     fd, path = tempfile.mkstemp(suffix=".p8")
-    with os.fdopen(fd, "w") as f:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(pem)
     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
     os.environ["SNOWFLAKE_PRIVATE_KEY_PATH"] = path
@@ -71,7 +71,7 @@ def _connect(params: dict):
 
 
 def _header(path: Path) -> list[str]:
-    with path.open(newline="") as f:
+    with path.open(newline="", encoding="utf-8") as f:
         return next(csv.reader(f))
 
 
@@ -244,6 +244,6 @@ def reconcile_snowflake(dbt_done: pd.DataFrame, params: dict) -> pd.DataFrame:
         *[f"| {r.column} | {r.mismatches} | {r.max_abs_diff:.2g} |" for r in out.itertuples()],
         "",
     ]
-    Path(params["report_file"]).write_text("\n".join(lines))
+    Path(params["report_file"]).write_text("\n".join(lines), encoding="utf-8", newline="\n")
     log.info("Snowflake reconciliation %s", status)
     return out

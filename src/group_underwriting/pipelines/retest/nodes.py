@@ -97,6 +97,6 @@ def write_retest(
     text = "\n".join(L) + "\n"
     path = Path(params["results_file"])
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8", newline="\n")
     log.info("Wrote %s", path)
     return text
