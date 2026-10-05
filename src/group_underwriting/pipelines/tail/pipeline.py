@@ -14,7 +14,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             ),
             node(
                 expected_excess,
-                ["predictions", "tail_fit", "params:attachment_points", "params:tail.hcc_model"],
+                ["predictions", "tail_fit", "params:attachment_points"],
                 "member_excess",
                 name="expected_excess",
             ),

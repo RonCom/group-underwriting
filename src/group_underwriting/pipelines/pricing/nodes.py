@@ -1,7 +1,8 @@
 """Expected specific and aggregate stop-loss cost per test group, against actual outcomes.
 
-Per group g with specific deductible d_g (set by size band):
-- expected claims    E[S]    = sum of member predicted annualized cost x exposure (cost GBM)
+Each group is priced twice, with the GLM and with the LightGBM models. Per group g with
+specific deductible d_g (set by size band):
+- expected claims    E[S]    = sum of member predicted annualized cost x exposure
 - expected specific  E[Spec] = sum of member E[(X - d_g)+] from the GPD tail
 - expected net       E[N]    = E[S] - E[Spec]
 - aggregate attachment A     = corridor x E[N]
@@ -40,14 +41,14 @@ def price_groups(
     cost_models: dict,
     params: dict,
 ) -> pd.DataFrame:
-    rng = np.random.default_rng(params["seed"])
+    """Price every test group with each cost model (and the matching HCC model for specific)."""
     test = (
         features.loc[
             features["split"] == "test",
             ["member_id", "group_id", "size_band", "exposure", "target_cost"],
         ]
         .merge(
-            predictions.loc[predictions["split"] == "test", ["member_id", "pred_gbm"]],
+            predictions.loc[predictions["split"] == "test", ["member_id", "pred_glm", "pred_gbm"]],
             on="member_id",
         )
         .merge(
@@ -61,27 +62,39 @@ def price_groups(
     test["deductible"] = test["size_band"].map(deductible)
     if test["deductible"].isna().any():
         raise ValueError("Every size band needs a specific deductible")
-    test["mu"] = test["pred_gbm"] * test["exposure"]
-    d_col = test["deductible"].astype(int).astype(str)
-    test["exp_specific"] = [
-        test.at[i, f"exp_excess_{d}"] for i, d in zip(test.index, d_col, strict=True)
-    ]
     test["act_specific"] = np.clip(test["target_cost"] - test["deductible"], 0, None)
+    d_col = test["deductible"].astype(int).astype(str)
+    out = []
+    for model in ("glm", "gbm"):
+        rng = np.random.default_rng(params["seed"])
+        t = test.assign(
+            pred=test[f"pred_{model}"],
+            mu=test[f"pred_{model}"] * test["exposure"],
+            exp_specific=[
+                test.at[i, f"exp_excess_{model}_{d}"]
+                for i, d in zip(test.index, d_col, strict=True)
+            ],
+        )
+        out.append(
+            _price(t, rng, cost_models["tweedie_power"], cost_models["phi"][model], params).assign(
+                model=model
+            )
+        )
+    log.info("Priced %d groups with each cost model", out[0].shape[0])
+    return pd.concat(out, ignore_index=True)
 
-    p = cost_models["tweedie_power"]
-    phi = cost_models["phi"]["gbm"]
+
+def _price(test: pd.DataFrame, rng, p: float, phi: float, params: dict) -> pd.DataFrame:
     rows = []
     for gid, g in test.groupby("group_id", sort=True):
-        mu_rate = g["pred_gbm"].to_numpy()
         e = g["exposure"].to_numpy()
-        sims = _tweedie_draws(rng, mu_rate, phi / e, p, params["n_sims"]) * e
+        sims = _tweedie_draws(rng, g["pred"].to_numpy(), phi / e, p, params["n_sims"]) * e
         net_sims = np.minimum(sims, g["deductible"].to_numpy()).sum(axis=1)
         exp_claims = g["mu"].sum()
         exp_spec = g["exp_specific"].sum()
         exp_net = exp_claims - exp_spec
         net_sims *= exp_net / net_sims.mean()
         attach = params["aggregate_corridor"] * exp_net
-        exp_agg = np.mean(np.clip(net_sims - attach, 0, None))
         act_claims = g["target_cost"].sum()
         act_spec = g["act_specific"].sum()
         act_net = act_claims - act_spec
@@ -96,7 +109,7 @@ def price_groups(
                 "expected_specific": exp_spec,
                 "expected_net": exp_net,
                 "aggregate_attachment": attach,
-                "expected_aggregate": exp_agg,
+                "expected_aggregate": np.mean(np.clip(net_sims - attach, 0, None)),
                 "p_aggregate_hit": np.mean(net_sims > attach),
                 "actual_claims": act_claims,
                 "actual_specific": act_spec,
@@ -112,7 +125,6 @@ def price_groups(
     out["actual_pmpm"] = out["actual_claims"] / out["member_months"]
     out["priced_loss_ratio"] = out["expected_claims"] / out["premium"]
     out["actual_loss_ratio"] = out["actual_claims"] / out["premium"]
-    log.info("Priced %d groups", len(out))
     return out
 
 
@@ -129,10 +141,12 @@ def summarize_by_band(priced: pd.DataFrame, params: dict) -> pd.DataFrame:
 
     rows = []
     bands = [*sorted(priced["size_band"].unique(), key=lambda b: int(b.split("-")[0])), "All"]
-    for b in bands:
-        d = priced if b == "All" else priced[priced["size_band"] == b]
+    for model, b in [(m, b) for m in priced["model"].unique() for b in bands]:
+        pm = priced[priced["model"] == model]
+        d = pm if b == "All" else pm[pm["size_band"] == b]
         ci = cluster_bootstrap(d, "group_id", stat, params["n_boot"], params["seed"])
         row = {
+            "model": model,
             "size_band": b,
             "groups": len(d),
             "members": int(d["members"].sum()),

@@ -113,8 +113,10 @@ def make_figures(
     save(fig, "shap_importance.png")
 
     fig, ax = plt.subplots(figsize=(6, 4))
-    ae = group_pricing["actual_claims"] / group_pricing["expected_claims"]
-    ax.scatter(group_pricing["members"], ae, s=14)
+    for m, label in MODELS.items():
+        gp = group_pricing[group_pricing["model"] == m]
+        ax.scatter(gp["members"], gp["actual_claims"] / gp["expected_claims"], s=14, label=label)
+    ax.legend()
     ax.axhline(1, color="grey", ls="--", lw=1)
     ax.set_xscale("log")
     ax.set(
@@ -217,7 +219,9 @@ def write_results(
         "| Attachment | Claimants | Model | AUC | PR-AUC | Top-decile lift | Brier |",
         "|---|---|---|---|---|---|---|",
     ]
-    for (a, m), d in hcc.groupby(["attachment", "model"], sort=True):
+    for (a, m), d in hcc[hcc["model"].isin(list(MODELS))].groupby(
+        ["attachment", "model"], sort=True
+    ):
         L.append(
             f"| ${a:,} | {d['positives'].iloc[0]} | {MODELS[m]} | {_row(d, 'auc')} | "
             f"{_row(d, 'pr_auc')} | {_row(d, 'top_decile_lift', '{:.1f}')} | "
@@ -225,6 +229,13 @@ def write_results(
         )
     f = tail_fit.iloc[0]
     L += [
+        "",
+        "AUC difference, LightGBM − GLM (paired, resampling members): "
+        + "; ".join(
+            f"${a:,}: {_row(d, 'auc')}"
+            for a, d in hcc[hcc["model"] == "gbm_minus_glm"].groupby("attachment")
+        )
+        + ".",
         "",
         f"![HCC calibration]({fig_rel}/hcc_calibration.png)",
         "",
@@ -235,13 +246,13 @@ def write_results(
         f"exceedances ({f['p_exceed']:.1%} of members), KS p = {f['ks_pvalue']:.3g} (the KS "
         "p-value ignores that the parameters were fit, so it is optimistic).",
         "",
-        "| Attachment | Claimants | Expected excess / member | Actual excess / member | "
-        "Actual / expected |",
-        "|---|---|---|---|---|",
+        "| Attachment | Claimants | HCC model | Expected excess / member | "
+        "Actual excess / member | Actual / expected |",
+        "|---|---|---|---|---|---|",
     ]
-    for a, d in excess.groupby("attachment"):
+    for (a, m), d in excess.groupby(["attachment", "model"]):
         L.append(
-            f"| ${a:,} | {d['claimants'].iloc[0]} | "
+            f"| ${a:,} | {d['claimants'].iloc[0]} | {MODELS[m]} | "
             f"{_row(d, 'expected_per_member', '${:,.0f}')} | "
             f"{_row(d, 'actual_per_member', '${:,.0f}')} | "
             f"{_row(d, 'actual_to_expected', '{:.2f}')} |"
@@ -267,13 +278,14 @@ def write_results(
         "",
         "## Stop-loss pricing by group size (test)",
         "",
-        "| Size band | Groups | Members | Priced loss ratio | Actual loss ratio | "
+        "| Models | Size band | Groups | Members | Priced loss ratio | Actual loss ratio | "
         "Claims actual / expected | Specific actual / expected | Aggregate hits (expected) |",
-        "|---|---|---|---|---|---|---|---|",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for r in pricing.itertuples():
         L.append(
-            f"| {r.size_band} | {r.groups} | {r.members:,} | {r.priced_loss_ratio:.3f} | "
+            f"| {MODELS[r.model]} | {r.size_band} | {r.groups} | {r.members:,} | "
+            f"{r.priced_loss_ratio:.3f} | "
             f"{_ci(r.actual_loss_ratio, r.actual_loss_ratio_lo, r.actual_loss_ratio_hi)} | "
             f"{_ci(r.actual_to_expected, r.actual_to_expected_lo, r.actual_to_expected_hi, '{:.2f}')} | "
             f"{_ci(r.specific_a_to_e, r.specific_a_to_e_lo, r.specific_a_to_e_hi, '{:.2f}')} | "
@@ -349,10 +361,10 @@ def log_mlflow(
             }
         )
         mlflow.log_metrics({r.metric: r.estimate for r in cost_ci.itertuples()})
-        for r in hcc[hcc["metric"].isin(["auc", "pr_auc"])].itertuples():
+        for r in hcc[hcc["metric"].isin(["auc", "pr_auc"])].itertuples():  # incl. AUC difference
             mlflow.log_metric(f"hcc_{r.attachment}_{r.model}_{r.metric}", r.estimate)
-        allrow = pricing[pricing["size_band"] == "All"].iloc[0]
-        mlflow.log_metric("pricing_actual_to_expected", allrow["actual_to_expected"])
+        for r in pricing[pricing["size_band"] == "All"].itertuples():
+            mlflow.log_metric(f"pricing_{r.model}_actual_to_expected", r.actual_to_expected)
         with tempfile.TemporaryDirectory() as tmp:
             for name, obj in {"cost_models.pkl": cost_models, "hcc_models.pkl": hcc_models}.items():
                 p = Path(tmp) / name
