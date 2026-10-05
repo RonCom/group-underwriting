@@ -11,7 +11,9 @@ def register_pipelines() -> dict[str, Pipeline]:
     (which needs the `dbt` extra)."""
     pipelines = dict(find_pipelines(raise_errors=True))
     optional = {
-        k: pipelines.pop(k) for k in ("synthetic", "warehouse", "followup") if k in pipelines
+        k: pipelines.pop(k)
+        for k in ("synthetic", "warehouse", "followup", "retest")
+        if k in pipelines
     }
     pipelines["__default__"] = sum(pipelines.values(), Pipeline([]))
     pipelines.update(optional)
