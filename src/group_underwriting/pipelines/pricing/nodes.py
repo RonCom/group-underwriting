@@ -147,6 +147,7 @@ def summarize_by_band(priced: pd.DataFrame, params: dict) -> pd.DataFrame:
         ci = cluster_bootstrap(d, "group_id", stat, params["n_boot"], params["seed"])
         row = {
             "model": model,
+            "label": pm["label"].iloc[0] if "label" in pm.columns else model,
             "size_band": b,
             "groups": len(d),
             "members": int(d["members"].sum()),
@@ -159,3 +160,51 @@ def summarize_by_band(priced: pd.DataFrame, params: dict) -> pd.DataFrame:
             row[f"{r['metric']}_hi"] = r["hi"]
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+def price_variants(
+    features: pd.DataFrame,
+    predictions: pd.DataFrame,
+    excess: pd.DataFrame,
+    spliced: pd.DataFrame,
+    cost_models: dict,
+    calibration: pd.DataFrame,
+    variants: dict,
+    params: dict,
+) -> pd.DataFrame:
+    """Price every test group under each named model configuration.
+
+    A variant picks the cost model, the claimant model behind the specific excess, the tail
+    (`single` GPD or `spliced`) and whether the cost model's level calibration factor is applied.
+    """
+    test = features.loc[
+        features["split"] == "test",
+        ["member_id", "group_id", "size_band", "exposure", "target_cost"],
+    ].merge(
+        predictions.loc[predictions["split"] == "test", ["member_id", "pred_glm", "pred_gbm"]],
+        on="member_id",
+    )
+    deductible = {b: float(d) for b, d in params["specific_deductible_by_band"].items()}
+    test["deductible"] = test["size_band"].map(deductible)
+    if test["deductible"].isna().any():
+        raise ValueError("Every size band needs a specific deductible")
+    test["act_specific"] = np.clip(test["target_cost"] - test["deductible"], 0, None)
+    factors = dict(zip(calibration["model"], calibration["factor"], strict=True))
+    tails = {"single": excess, "spliced": spliced}
+    out = []
+    for name, v in variants.items():
+        frame = tails[v["tail"]].set_index("member_id").reindex(test["member_id"])
+        exp_spec = np.array(
+            [
+                frame.at[m, f"exp_excess_{v['claimant']}_{int(d)}"]
+                for m, d in zip(test["member_id"], test["deductible"], strict=True)
+            ]
+        )
+        factor = factors[v["cost"]] if v["calibrate"] else 1.0
+        pred = test[f"pred_{v['cost']}"] * factor
+        t = test.assign(pred=pred, mu=pred * test["exposure"], exp_specific=exp_spec)
+        rng = np.random.default_rng(params["seed"])
+        priced = _price(t, rng, cost_models["tweedie_power"], cost_models["phi"][v["cost"]], params)
+        out.append(priced.assign(model=name, label=v["label"]))
+        log.info("Priced variant %s (level factor %.4f)", name, factor)
+    return pd.concat(out, ignore_index=True)

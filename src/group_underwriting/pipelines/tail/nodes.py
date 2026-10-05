@@ -14,6 +14,7 @@ the attachment points), and for xi < 1
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -113,6 +114,20 @@ def fit_upper_tail(
     )
     u2 = params["upper_threshold"]
     exc = x[x > u2] - u2
+    if len(exc) < params.get("min_exceedances", 30):
+        log.warning("Only %d costs above %s: no upper GPD, spliced tail = single GPD", len(exc), u2)
+        return pd.DataFrame(
+            [
+                {
+                    "threshold": u2,
+                    "xi": np.nan,
+                    "sigma": np.nan,
+                    "n_exceed": len(exc),
+                    "n": len(x),
+                    "ks_pvalue": np.nan,
+                }
+            ]
+        )
     xi, _, sigma = stats.genpareto.fit(exc, floc=0)
     log.info("Upper GPD above %s: xi=%.3f sigma=%.0f (%d exceedances)", u2, xi, sigma, len(exc))
     return pd.DataFrame(
@@ -138,8 +153,11 @@ def spliced_excess(
     """Expected excess with the lower GPD up to the upper threshold and the upper GPD beyond.
 
     S(x) = p S1(x - u) on [u, u2) and p S1(u2 - u) S2(x - u2) above u2; E[(X - d)+] = ∫_d^∞ S.
+    Without an upper fit (too few exceedances) this equals `expected_excess`.
     """
     f1, f2 = tail_fit.iloc[0], upper_fit.iloc[0]
+    if np.isnan(f2["xi"]):
+        return expected_excess(predictions, tail_fit, attachments)
     u, u2 = f1["threshold"], f2["threshold"]
     s1_u2 = gpd_survival(u2 - u, f1["xi"], f1["sigma"])
     above_u2 = s1_u2 * gpd_stop_loss(0.0, f2["xi"], f2["sigma"])
@@ -159,3 +177,16 @@ def spliced_excess(
             out[f"exp_excess_{m}_{int(d)}"] = predictions[f"p_{m}_{int(u)}"] * per_p
         out[f"act_excess_{int(d)}"] = np.clip(out["target_cost"] - d, 0, None)
     return out
+
+
+def fit_upper_tail_main(features: pd.DataFrame, params: dict) -> pd.DataFrame:
+    """Upper GPD from this run's training members plus any already-seen samples listed in
+    `extra_features` (files that don't exist are skipped with a warning)."""
+    extra = []
+    for f in params.get("extra_features", []):
+        if Path(f).exists():
+            extra.append(pd.read_parquet(f, columns=["target_cost"]))
+        else:
+            log.warning("Upper-tail calibration file %s not found; skipped", f)
+    calibration = pd.concat(extra) if extra else pd.DataFrame({"target_cost": []})
+    return fit_upper_tail(features, calibration, params)

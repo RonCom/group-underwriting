@@ -113,8 +113,8 @@ def make_figures(
     save(fig, "shap_importance.png")
 
     fig, ax = plt.subplots(figsize=(6, 4))
-    for m, label in MODELS.items():
-        gp = group_pricing[group_pricing["model"] == m]
+    for m, gp in group_pricing.groupby("model", sort=False):
+        label = gp["label"].iloc[0] if "label" in gp.columns else MODELS.get(m, m)
         ax.scatter(gp["members"], gp["actual_claims"] / gp["expected_claims"], s=14, label=label)
     ax.legend()
     ax.axhline(1, color="grey", ls="--", lw=1)
@@ -284,7 +284,7 @@ def write_results(
     ]
     for r in pricing.itertuples():
         L.append(
-            f"| {MODELS[r.model]} | {r.size_band} | {r.groups} | {r.members:,} | "
+            f"| {MODELS.get(r.label, r.label)} | {r.size_band} | {r.groups} | {r.members:,} | "
             f"{r.priced_loss_ratio:.3f} | "
             f"{_ci(r.actual_loss_ratio, r.actual_loss_ratio_lo, r.actual_loss_ratio_hi)} | "
             f"{_ci(r.actual_to_expected, r.actual_to_expected_lo, r.actual_to_expected_hi, '{:.2f}')} | "
