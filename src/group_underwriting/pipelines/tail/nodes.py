@@ -92,3 +92,70 @@ def expected_excess(
             out[f"exp_excess_{m}_{int(d)}"] = predictions[f"p_{m}_{int(u)}"] * excess_above_u
         out[f"act_excess_{int(d)}"] = np.clip(out["target_cost"] - d, 0, None)
     return out
+
+
+def gpd_survival(t: np.ndarray | float, xi: float, sigma: float) -> np.ndarray:
+    t = np.asarray(t, float)
+    if abs(xi) < 1e-6:
+        return np.exp(-t / sigma)
+    return np.clip(1 + xi * t / sigma, 0, None) ** (-1 / xi)
+
+
+def fit_upper_tail(
+    train_features: pd.DataFrame, calibration_features: pd.DataFrame, params: dict
+) -> pd.DataFrame:
+    """Second GPD above `upper_threshold`, fit to pooled annual cost from already-seen data."""
+    x = np.concatenate(
+        [
+            train_features.loc[train_features["split"] == "train", "target_cost"].to_numpy(),
+            calibration_features["target_cost"].to_numpy(),
+        ]
+    )
+    u2 = params["upper_threshold"]
+    exc = x[x > u2] - u2
+    xi, _, sigma = stats.genpareto.fit(exc, floc=0)
+    log.info("Upper GPD above %s: xi=%.3f sigma=%.0f (%d exceedances)", u2, xi, sigma, len(exc))
+    return pd.DataFrame(
+        [
+            {
+                "threshold": u2,
+                "xi": xi,
+                "sigma": sigma,
+                "n_exceed": len(exc),
+                "n": len(x),
+                "ks_pvalue": stats.kstest(exc, "genpareto", args=(xi, 0, sigma)).pvalue,
+            }
+        ]
+    )
+
+
+def spliced_excess(
+    predictions: pd.DataFrame,
+    tail_fit: pd.DataFrame,
+    upper_fit: pd.DataFrame,
+    attachments: list[float],
+) -> pd.DataFrame:
+    """Expected excess with the lower GPD up to the upper threshold and the upper GPD beyond.
+
+    S(x) = p S1(x - u) on [u, u2) and p S1(u2 - u) S2(x - u2) above u2; E[(X - d)+] = ∫_d^∞ S.
+    """
+    f1, f2 = tail_fit.iloc[0], upper_fit.iloc[0]
+    u, u2 = f1["threshold"], f2["threshold"]
+    s1_u2 = gpd_survival(u2 - u, f1["xi"], f1["sigma"])
+    above_u2 = s1_u2 * gpd_stop_loss(0.0, f2["xi"], f2["sigma"])
+    out = predictions[["member_id", "split", "group_id", "target_cost"]].copy()
+    for d in attachments:
+        if d < u:
+            continue
+        if d < u2:
+            per_p = (
+                gpd_stop_loss(d - u, f1["xi"], f1["sigma"])
+                - gpd_stop_loss(u2 - u, f1["xi"], f1["sigma"])
+                + above_u2
+            )
+        else:
+            per_p = s1_u2 * gpd_stop_loss(d - u2, f2["xi"], f2["sigma"])
+        for m in ("glm", "gbm"):
+            out[f"exp_excess_{m}_{int(d)}"] = predictions[f"p_{m}_{int(u)}"] * per_p
+        out[f"act_excess_{int(d)}"] = np.clip(out["target_cost"] - d, 0, None)
+    return out
