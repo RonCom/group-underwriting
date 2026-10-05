@@ -112,3 +112,15 @@ the frozen Sample 2 models score Sample 3 (2008 → 2009) in the `followup` Kedr
 (`kedro run --env followup --pipeline followup`), which reads models, the GPD fit and Sample 2
 member IDs from `data/real` and fails if any member overlaps. Pre-registered in
 `docs/preregistration_followup.md` before Sample 3 was downloaded.
+
+## 2026-10-05: re-test on Sample 4, models of record changed
+
+Pre-registered in `docs/preregistration_retest.md`, run in the `retest` Kedro environment (Sample 4
+data, frozen Sample 2 models, upper tail fit on Sample 2 training + Sample 3). Outcome under the
+pre-registered rules:
+- **Cost model of record: LightGBM** (Gini and MAE differences both clear of zero). It runs ~2% low
+  on level; recalibration is a separate future challenger.
+- **Claimant model of record: logistic** (LightGBM's AUC gain at $50k isn't clear of zero).
+- **Tail: spliced** (GPD above $25k up to $100k, second GPD above $100k).
+The main `kedro run` still produces the original frozen Sample 2 outputs; the adopted tail lives
+in the `retest` pipeline until it is wired into pricing.
