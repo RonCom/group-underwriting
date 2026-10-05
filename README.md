@@ -214,9 +214,27 @@ Pipelines (`src/group_underwriting/pipelines/`): `ingest` → `features` → `mo
 reconciliation). Parameters: `conf/base/parameters.yml`; synthetic overrides in `conf/synthetic/`.
 
 ## Snowflake
-`dbt/profiles.yml` has a `snowflake` target (key-pair auth, settings from `SNOWFLAKE_*`
-environment variables) and the models use portable macros for dates and regex. Loading RAW/KEDRO
-tables into Snowflake and the Snowflake-vs-DuckDB reconciliation are not built yet.
+The same dbt models build in Snowflake, and a reconciliation compares Snowflake's
+`MART.MEMBER_FEATURES` with DuckDB's on every row and column.
+
+```
+data/real/01_raw/*.csv  --PUT/COPY-->  RAW.*        (all text, plus FILENAME)
+Kedro claims, groups    --PUT/COPY-->  KEDRO.*      (simulated paid dates, cohort rows)
+dbt build --target snowflake  -->  STG.*, MART.MEMBER_FEATURES  -->  compare with DuckDB
+```
+
+One-time setup: generate a key pair locally, paste the public key into
+[`snowflake/setup.sql`](snowflake/setup.sql) and run it in Snowsight as ACCOUNTADMIN. Then set
+`SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER` (`GU_SVC`) and `SNOWFLAKE_PRIVATE_KEY` (PEM text) or
+`SNOWFLAKE_PRIVATE_KEY_PATH` as environment variables, and run:
+
+```bash
+uv sync --extra dbt --extra snowflake
+uv run kedro run --pipeline warehouse     # DuckDB build first
+uv run kedro run --pipeline snowflake     # load, dbt build on Snowflake, reconcile
+```
+
+Output: `docs/reconciliation_snowflake.md`. **Not run yet**: it's waiting on credentials.
 
 ## Limits
 - **2010 is thin in DE-SynPUF.** Claims per member-month drop 30–40% from 2009, so the
@@ -250,5 +268,5 @@ tests/
 - [x] Pre-registered LightGBM re-test and spliced tail on Sample 4
 - [x] Wire the adopted models into the main pricing pipeline (`pricing_variants`)
 - [x] Pre-registered LightGBM level recalibration, tested on Sample 5
-- [ ] Snowflake load and Snowflake-vs-DuckDB reconciliation
+- [x] Snowflake load and Snowflake-vs-DuckDB reconciliation (built; not run until credentials exist)
 - [ ] Blog post for roncom.github.io after the real-data run
