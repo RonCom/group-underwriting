@@ -1,0 +1,26 @@
+-- One row per member and calendar year from the Beneficiary Summary files.
+SELECT
+    DESYNPUF_ID AS member_id,
+    {{ file_year('filename') }} AS year,
+    {{ try_yyyymmdd('BENE_BIRTH_DT') }} AS birth_dt,
+    {{ try_yyyymmdd('BENE_DEATH_DT') }} AS death_dt,
+    TRY_CAST(BENE_SEX_IDENT_CD AS INT) AS sex,
+    BENE_ESRD_IND = 'Y' AS esrd,
+    TRY_CAST(SP_STATE_CODE AS INT) AS state,
+    TRY_CAST(BENE_COUNTY_CD AS INT) AS county,
+    TRY_CAST(BENE_HI_CVRAGE_TOT_MONS AS INT) AS months_a,
+    TRY_CAST(BENE_SMI_CVRAGE_TOT_MONS AS INT) AS months_b,
+    TRY_CAST(BENE_HMO_CVRAGE_TOT_MONS AS INT) AS months_hmo,
+    TRY_CAST(PLAN_CVRG_MOS_NUM AS INT) AS months_d,
+    TRY_CAST(SP_ALZHDMTA AS INT) = 1 AS alzheimers,
+    TRY_CAST(SP_CHF AS INT) = 1 AS chf,
+    TRY_CAST(SP_CHRNKIDN AS INT) = 1 AS ckd,
+    TRY_CAST(SP_CNCR AS INT) = 1 AS cancer,
+    TRY_CAST(SP_COPD AS INT) = 1 AS copd,
+    TRY_CAST(SP_DEPRESSN AS INT) = 1 AS depression,
+    TRY_CAST(SP_DIABETES AS INT) = 1 AS diabetes,
+    TRY_CAST(SP_ISCHMCHT AS INT) = 1 AS ischemic_heart,
+    TRY_CAST(SP_OSTEOPRS AS INT) = 1 AS osteoporosis,
+    TRY_CAST(SP_RA_OA AS INT) = 1 AS ra_oa,
+    TRY_CAST(SP_STRKETIA AS INT) = 1 AS stroke
+FROM {{ source('raw', 'beneficiary') }}

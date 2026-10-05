@@ -1,0 +1,20 @@
+# No secrets here. The Kedro `warehouse` pipeline sets GU_DB_PATH, GU_DATA_ROOT and GU_DBT_TARGET.
+group_underwriting:
+  target: "{{ env_var('GU_DBT_TARGET', 'duckdb') }}"
+  outputs:
+    duckdb:
+      type: duckdb
+      path: "{{ env_var('GU_DB_PATH', '../data/synthetic/05_model_input/warehouse.duckdb') }}"
+      schema: main
+      threads: 4
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', '') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', 'GU_SVC') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'GU_ROLE') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'GU_WH') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'GROUP_UNDERWRITING') }}"
+      schema: STG
+      authenticator: snowflake_jwt
+      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '') }}"
+      threads: 4
