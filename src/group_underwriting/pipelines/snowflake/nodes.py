@@ -7,6 +7,7 @@ Role, warehouse and database default to the names in snowflake/setup.sql.
 
 from __future__ import annotations
 
+import atexit
 import csv
 import logging
 import os
@@ -36,7 +37,10 @@ RAW_TABLES = {
 
 
 def _key_path() -> str:
-    """Path to the private key, writing SNOWFLAKE_PRIVATE_KEY to a 0600 temp file if given."""
+    """Path to the private key, writing SNOWFLAKE_PRIVATE_KEY to a 0600 temp file if given.
+
+    The temp file is deleted when the process exits.
+    """
     if os.environ.get("SNOWFLAKE_PRIVATE_KEY_PATH"):
         return os.environ["SNOWFLAKE_PRIVATE_KEY_PATH"]
     pem = os.environ.get("SNOWFLAKE_PRIVATE_KEY")
@@ -47,6 +51,7 @@ def _key_path() -> str:
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(pem)
     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+    atexit.register(lambda: Path(path).unlink(missing_ok=True))
     os.environ["SNOWFLAKE_PRIVATE_KEY_PATH"] = path
     return path
 
