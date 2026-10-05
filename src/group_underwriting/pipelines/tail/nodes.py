@@ -76,18 +76,19 @@ def fit_tail(
 
 
 def expected_excess(
-    predictions: pd.DataFrame, tail_fit: pd.DataFrame, attachments: list[float], model: str
+    predictions: pd.DataFrame, tail_fit: pd.DataFrame, attachments: list[float]
 ) -> pd.DataFrame:
-    """Per-member expected and actual loss above each attachment point."""
+    """Per-member expected (per HCC model) and actual loss above each attachment point."""
     f = tail_fit.iloc[0]
     u = f["threshold"]
     if int(u) not in [int(a) for a in attachments]:
         raise ValueError(f"Tail threshold {u} must be one of the attachment points {attachments}")
-    p_u = predictions[f"p_{model}_{int(u)}"].to_numpy()
     out = predictions[["member_id", "split", "group_id", "target_cost"]].copy()
     for d in attachments:
         if d < u:
             continue
-        out[f"exp_excess_{int(d)}"] = p_u * gpd_stop_loss(d - u, f["xi"], f["sigma"])
+        excess_above_u = gpd_stop_loss(d - u, f["xi"], f["sigma"])
+        for m in ("glm", "gbm"):
+            out[f"exp_excess_{m}_{int(d)}"] = predictions[f"p_{m}_{int(u)}"] * excess_above_u
         out[f"act_excess_{int(d)}"] = np.clip(out["target_cost"] - d, 0, None)
     return out

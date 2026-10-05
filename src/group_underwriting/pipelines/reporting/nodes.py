@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from ...metrics import (
+    auc,
     calibration_table,
     classification_metrics,
     cluster_bootstrap,
@@ -153,30 +154,45 @@ def evaluate_hcc(
             cal.append(
                 calibration_table(y.to_numpy(), t[col].to_numpy()).assign(attachment=d, model=m)
             )
+
+        def diff(x: pd.DataFrame, d=d) -> dict[str, float]:
+            yy = x["_y"].to_numpy()
+            if yy.min() == yy.max():
+                return {"auc": np.nan}
+            return {
+                "auc": auc(yy, x[f"p_gbm_{d}"].to_numpy()) - auc(yy, x[f"p_glm_{d}"].to_numpy())
+            }
+
+        ci = cluster_bootstrap(t, "member_id", diff, params["n_boot"], params["seed"])
+        rows.append(ci.assign(attachment=d, model="gbm_minus_glm", positives=int(y.sum())))
     return pd.concat(rows, ignore_index=True), pd.concat(cal, ignore_index=True)
 
 
 def evaluate_excess(
     member_excess: pd.DataFrame, attachments: list[float], params: dict
 ) -> pd.DataFrame:
-    """Expected (GPD) vs actual loss above each attachment on the test cohort."""
+    """Expected (HCC probability x GPD) vs actual loss above each attachment, test cohort."""
     t = member_excess[member_excess["split"] == "test"]
     rows = []
     for d in attachments:
         d = int(d)
-        if f"exp_excess_{d}" not in t:
-            continue
+        for m in MODELS:
+            col = f"exp_excess_{m}_{d}"
+            if col not in t:
+                continue
 
-        def stat(x: pd.DataFrame, d=d) -> dict[str, float]:
-            n = len(x)
-            return {
-                "expected_per_member": x[f"exp_excess_{d}"].sum() / n,
-                "actual_per_member": x[f"act_excess_{d}"].sum() / n,
-                "actual_to_expected": x[f"act_excess_{d}"].sum() / x[f"exp_excess_{d}"].sum(),
-            }
+            def stat(x: pd.DataFrame, d=d, col=col) -> dict[str, float]:
+                n = len(x)
+                return {
+                    "expected_per_member": x[col].sum() / n,
+                    "actual_per_member": x[f"act_excess_{d}"].sum() / n,
+                    "actual_to_expected": x[f"act_excess_{d}"].sum() / x[col].sum(),
+                }
 
-        ci = cluster_bootstrap(t, "member_id", stat, params["n_boot"], params["seed"])
-        rows.append(ci.assign(attachment=d, claimants=int((t["target_cost"] > d).sum())))
+            ci = cluster_bootstrap(t, "member_id", stat, params["n_boot"], params["seed"])
+            rows.append(
+                ci.assign(attachment=d, model=m, claimants=int((t["target_cost"] > d).sum()))
+            )
     return pd.concat(rows, ignore_index=True)
 
 

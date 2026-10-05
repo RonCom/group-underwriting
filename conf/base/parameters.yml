@@ -63,7 +63,6 @@ models:
 
 tail:
   threshold: 25000            # must be one of attachment_points
-  hcc_model: gbm
 
 pricing:
   seed: 5
