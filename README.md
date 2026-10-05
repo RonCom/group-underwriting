@@ -268,5 +268,5 @@ tests/
 - [x] Pre-registered LightGBM re-test and spliced tail on Sample 4
 - [x] Wire the adopted models into the main pricing pipeline (`pricing_variants`)
 - [x] Pre-registered LightGBM level recalibration, tested on Sample 5
-- [x] Snowflake load and Snowflake-vs-DuckDB reconciliation (built; not run until credentials exist)
+- [ ] Run the Snowflake load and reconciliation (built; waiting on credentials)
 - [ ] Blog post for roncom.github.io after the real-data run
