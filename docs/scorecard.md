@@ -49,3 +49,36 @@ remaining development. Not verified.
 
 **Data note.** `PROD_SRVC_ID` is close to unique per fill in DE-SynPUF (distinct drugs ≈ fills:
 19.43 vs 19.43 per member in 2009), so "distinct drugs" duplicates "fills".
+
+# Follow-up (pre-registered in `docs/preregistration_followup.md`)
+
+Run 2026-10-05: frozen Sample 2 models on DE-SynPUF Sample 3 (72,271 members, none in Sample 2;
+207 groups), 2008 features → 2009 cost, plus relative pricing on the Sample 2 2010 test. Full
+tables: [`followup/results.md`](followup/results.md). **10 of 12 predictions hit.**
+
+| # | Prediction | Result (GLM unless noted) | Verdict |
+|---|---|---|---|
+| F1a | Member Gini 0.62–0.74 | 0.698 [0.692–0.705] | Hit |
+| F1b | Predicted / actual 0.95–1.05 | 1.005 [0.995–1.014] | Hit |
+| F1c | AUC 0.72–0.82 at $25k, 0.70–0.82 at $50k | 0.823 and 0.850 | **Miss** (stronger) |
+| F1d | Excess A/E intervals cover 1 at $25k and $50k | 0.98 [0.94–1.03]; 0.97 [0.88–1.05] | Hit |
+| F1e | Group claims A/E covers 1, within 0.95–1.05 | 0.995 [0.987–1.004] | Hit |
+| F1f | No band's claims A/E interval excludes 1 | All five cover 1 (lowest: 50–99, 0.98 [0.94–1.02]) | Hit |
+| F1g | Specific A/E interval covers 1 | 0.94 [0.85–1.03] | Hit |
+| F1h | Aggregate breaches within 95% Poisson range | 2 observed, 2.8 expected (range 0–6) | Hit |
+| F1i | 50–99 actual-LR interval ≥ 2× each 500+ band's | 0.066 vs 0.030 and 0.023 | Hit |
+| F1j | Group PMPM Spearman 0.3–0.7, interval above 0 | 0.698 [0.602–0.764] | Hit |
+| F2a | Rescaled 2010 A/E covers 1 in every band | 50–99: 1.07 [1.01–1.15]; 250–499: 0.96 [0.94–0.99]; 1,000+: 0.98 [0.95–0.99] | **Miss** |
+| F2b | 2010 group PMPM Spearman 0.2–0.6, interval above 0 | 0.586 [0.421–0.714] | Hit |
+
+**Reading.**
+- On complete years and a population the models never saw, the pricing method is calibrated:
+  claims A/E 0.995, specific A/E 0.94, and 2 aggregate breaches against 2.8 expected. That is
+  consistent with the Sample 2 level misses coming from the 2010 data drop, not the method.
+- Above $100k (not pre-registered; 75 claimants) actual excess is 0.59 [0.42–0.77] of expected:
+  the single GPD overstates the far tail.
+- On Sample 3, LightGBM beats the GLM on both MAE (−$239 [−256 to −226]) and Gini (+0.011
+  [0.010–0.013]), which would meet the Test 1 adoption rule. The rule was applied once, on Sample 2,
+  and isn't re-run here. A pre-registered re-test on another sample would settle it.
+- In 2010, after removing the overall drop, 50–99 groups run 7% above expected and 250–499 groups
+  4% below. The 2010 thinning isn't uniform across groups; the cause isn't established.

@@ -6,11 +6,11 @@ resulting specific and aggregate stop-loss cost per group, then compares those p
 actually happened the following year. Built as Kedro pipelines on CMS DE-SynPUF claims, with a dbt
 feature mart reconciled row for row against the Python features.
 
-> **Status:** run on DE-SynPUF Sample 2 (116k beneficiaries, 11.2M claims) against tests
-> pre-registered before any data was loaded. 6 of 13 predictions hit. Ranking works (test Gini
-> 0.54, high-cost AUC 0.71–0.74), but **2010 cost-level checks fail** because DE-SynPUF's 2010
-> claims are 30–40% thinner than 2009's, a drop in the data that nothing at the pricing date
-> predicts. Scorecard: [`docs/scorecard.md`](docs/scorecard.md).
+> **Status:** run on DE-SynPUF Sample 2 against tests pre-registered before any data was loaded,
+> then a pre-registered follow-up on Sample 3. On an independent population with complete years,
+> group pricing is calibrated (claims actual / expected 0.995 [0.987–1.004] across 207 groups).
+> The original out-of-time test year, 2010, can't check price levels: DE-SynPUF's 2010 claims are
+> 30–40% thinner than 2009's. Scorecard: [`docs/scorecard.md`](docs/scorecard.md).
 
 ## Question
 Using only claims visible at a pricing date, can member-level models price specific and aggregate
@@ -103,6 +103,31 @@ match ([reconciliation](docs/reconciliation.md)). Full real-data run: ~4 minutes
   total prior cost are the top SHAP drivers; group explanations read like "professional claims
   22.0 vs 17.7 per member (raises cost 15%)".
 
+### Follow-up: independent sample, complete years (DE-SynPUF Sample 3)
+Frozen Sample 2 models, Sample 3's 72,271 members (none in Sample 2) in 207 groups, 2008 features
+→ 2009 cost. 10 of 12 pre-registered predictions hit. Tables:
+[`docs/followup/results.md`](docs/followup/results.md).
+
+| Pricing by group size (Sample 3, GLM) | Groups | Priced LR | Actual LR | Claims A/E | Specific A/E |
+|---|---|---|---|---|---|
+| 50–99 | 52 | 0.868 | 0.849 [0.816–0.882] | 0.98 [0.94–1.02] | 0.84 [0.71–0.98] |
+| 100–249 | 72 | 0.869 | 0.879 [0.863–0.896] | 1.01 [0.99–1.03] | 1.02 [0.86–1.20] |
+| 250–499 | 47 | 0.870 | 0.865 [0.847–0.881] | 1.00 [0.97–1.01] | 1.06 [0.90–1.22] |
+| 500–999 | 26 | 0.870 | 0.863 [0.847–0.877] | 0.99 [0.97–1.01] | 0.73 [0.40–1.08] |
+| 1,000–2,500 | 10 | 0.870 | 0.862 [0.850–0.873] | 0.99 [0.98–1.00] | 0.39 [0.13–0.63] |
+| All | 207 | 0.869 | 0.865 [0.858–0.873] | 1.00 [0.99–1.00] | 0.94 [0.85–1.03] |
+
+- **Calibrated where the data is complete.** Member predicted / actual 1.005, excess loss A/E 0.98
+  above $25k and 0.97 above $50k, 2 aggregate breaches against 2.8 expected.
+- **Ranking holds.** Member Gini 0.70; claimant AUC 0.82 ($25k), 0.85 ($50k), 0.91 ($100k, 75
+  claimants); expected vs actual group PMPM Spearman 0.70 [0.60–0.76].
+- **The far tail is overpriced.** Above $100k actual excess is 0.59 [0.42–0.77] of expected (not
+  pre-registered): one GPD above $25k is too heavy that far out.
+- **LightGBM looks better here** (MAE −$239, Gini +0.011, both intervals clear of zero), but the
+  adoption rule was spent on Sample 2. A pre-registered re-test on Sample 4 would decide it.
+- **2010 relative pricing misses** after removing the overall drop: 50–99 groups run 7% above
+  expected, 250–499 groups 4% below.
+
 The synthetic mode (generated data, used for CI) has its own results in
 [`docs/synthetic/results.md`](docs/synthetic/results.md); a full synthetic run takes ~45 s.
 
@@ -121,6 +146,10 @@ uv run kedro run --env synthetic --pipeline warehouse   # dbt build + reconcilia
 uv run python -m group_underwriting.download            # or unzip the CSVs there by hand
 uv run kedro run
 uv run kedro run --pipeline warehouse
+
+# Follow-up: frozen models on Sample 3 (download it to data/sample3/01_raw first)
+uv run python -m group_underwriting.download --sample 3 --dest data/sample3/01_raw
+uv run kedro run --env followup --pipeline followup
 
 uv run pytest
 ```
@@ -156,9 +185,9 @@ tables into Snowflake and the Snowflake-vs-DuckDB reconciliation are not built y
 
 ## Repo layout
 ```
-conf/            Kedro config: base (real data), synthetic, local (git-ignored)
+conf/            Kedro config: base (real data), synthetic, followup, local (git-ignored)
 src/             Kedro pipelines: ingest, features, models, tail, pricing, reporting, runout,
-                 synthetic, warehouse; metrics.py; download.py
+                 synthetic, warehouse, followup; metrics.py; download.py
 dbt/             staging and feature-mart models (DuckDB, Snowflake target)
 docs/            decisions.md, preregistration.md, scorecard.md, results.md; synthetic/
 notebooks/       exploration only
@@ -167,7 +196,7 @@ tests/
 
 ## To do
 - [x] Real DE-SynPUF Sample 2 run and pre-registered tests 0–5 ([scorecard](docs/scorecard.md))
-- [ ] Follow-up (new pre-registration): a level check that doesn't depend on 2010 volume, e.g.
-      2008 → 2009 out-of-time on held-out members, or recalibrating to 2010's observed level
+- [x] Pre-registered follow-up on Sample 3 and 2010 relative pricing
+- [ ] Pre-registered LightGBM re-test and a second tail segment above $100k, on Sample 4
 - [ ] Snowflake load and Snowflake-vs-DuckDB reconciliation
 - [ ] Blog post for roncom.github.io after the real-data run

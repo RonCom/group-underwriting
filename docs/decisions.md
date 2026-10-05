@@ -104,3 +104,11 @@ saved models were reused. The tail's expected excess is now computed from both H
 The GLM remains the cost and claimant model of record (Test 1 and 2 rules). DE-SynPUF's 2010
 claim volume is 30–40% below 2009 (`docs/scorecard.md`); no adjustment for it is made in the
 frozen run.
+
+## 2026-10-05: follow-up on Sample 3
+
+DE-SynPUF has no years after 2010, so the level test uses another sample instead of more years:
+the frozen Sample 2 models score Sample 3 (2008 → 2009) in the `followup` Kedro environment
+(`kedro run --env followup --pipeline followup`), which reads models, the GPD fit and Sample 2
+member IDs from `data/real` and fails if any member overlaps. Pre-registered in
+`docs/preregistration_followup.md` before Sample 3 was downloaded.
