@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --extra dbt
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+      - name: Full synthetic run, timed (target under 60 s)
+        run: |
+          start=$(date +%s)
+          uv run kedro run --env synthetic --pipeline synthetic
+          uv run kedro run --env synthetic
+          echo "Synthetic run took $(( $(date +%s) - start )) s"
+      - name: dbt build and row-for-row reconciliation
+        run: uv run kedro run --env synthetic --pipeline warehouse
