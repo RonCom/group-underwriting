@@ -1,0 +1,12 @@
+cohorts:
+  split_salt: cohort-split
+  train_share: 0.0
+  train_year: 2008
+  test_year: 2008
+
+holdout:
+  results_file: docs/holdout/results.md
+  seen_member_files:
+    - data/real/02_intermediate/members.parquet
+    - data/sample3/02_intermediate/members.parquet
+    - data/sample4/02_intermediate/members.parquet
