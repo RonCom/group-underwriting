@@ -1,4 +1,7 @@
-# Pre-registration: DE-SynPUF Sample 1
+# Pre-registration: DE-SynPUF Sample 2
+
+> Amended 2026-10-05, before any data was loaded: the sample changed from 1 to 2 because CMS no
+> longer hosts Sample 1's 2010 Beneficiary Summary file (`docs/decisions.md`). Nothing else changed.
 
 Written 2026-10-05, before any DE-SynPUF file was downloaded or loaded. The code, parameters and
 these rules are frozen at the commit that adds this file; any later change to them is logged in
