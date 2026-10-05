@@ -26,7 +26,7 @@ Target: duckdb. Status: **MATCH**. 22,233 Kedro rows, 22,233 dbt rows, 33 column
 | cost_op | 22,233 | 0 | 0 |
 | cost_car | 22,233 | 0 | 0 |
 | cost_rx | 22,233 | 0 | 1.5e-11 |
-| cost_total | 22,233 | 0 | 1.5e-11 |
+| cost_total | 22,233 | 0 | 1.2e-10 |
 | cost_h2 | 22,233 | 0 | 2.9e-11 |
 | max_claim | 22,233 | 0 | 0 |
 | n_ip_stays | 22,233 | 0 | 0 |
@@ -37,4 +37,4 @@ Target: duckdb. Status: **MATCH**. 22,233 Kedro rows, 22,233 dbt rows, 33 column
 | n_ndc | 22,233 | 0 | 0 |
 | n_specialty_rx | 22,233 | 0 | 0 |
 | months_with_claims | 22,233 | 0 | 0 |
-| target_cost | 22,233 | 0 | 1.2e-10 |
+| target_cost | 22,233 | 0 | 5.8e-11 |
