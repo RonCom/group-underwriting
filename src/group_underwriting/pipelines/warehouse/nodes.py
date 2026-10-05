@@ -111,7 +111,7 @@ def reconcile(features: pd.DataFrame, db_path: str, params: dict) -> pd.DataFram
     ]
     path = Path(params["report_file"])
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines))
+    path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     log.info("Reconciliation %s: %s", status, path)
     if status != "MATCH" and params["fail_on_mismatch"]:
         raise ValueError(f"dbt and Kedro features differ; see {path}")

@@ -27,7 +27,7 @@ def test_synthetic_pipeline_end_to_end(tmp_path):
         ) as session:
             session.run(pipeline_names=[pipeline])
 
-    results = (tmp_path / "docs" / "results.md").read_text()
+    results = (tmp_path / "docs" / "results.md").read_text(encoding="utf-8")
     assert "## Stop-loss pricing by group size (test)" in results
     assert len(list((tmp_path / "docs" / "figures").glob("*.png"))) == 6
 
