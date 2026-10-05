@@ -114,3 +114,31 @@ or 3; 205 groups), 2008 features → 2009 cost. Full tables: [`retest/results.md
   losses above $100k. Spliced at $100k, expected excess matches actual at all three attachments.
 - At $100k, LightGBM's claimant AUC is below logistic's (−0.023 [−0.041 to −0.006], 88 claimants;
   not pre-registered).
+
+# Holdout (pre-registered in `docs/preregistration_holdout.md`)
+
+Run 2026-10-05: frozen Sample 2 models, tails and level factors on DE-SynPUF Sample 5 (72,116
+members, none in Samples 2–4; 205 groups), 2008 features → 2009 cost. Full tables:
+[`holdout/results.md`](holdout/results.md). **6 of 7 predictions hit.**
+
+| # | Prediction | Result | Verdict |
+|---|---|---|---|
+| H1a | Uncalibrated LightGBM predicted / actual below 1 | 0.984 [0.976–0.992] | Hit |
+| H1b | Recalibrated (× 1.018) predicted / actual covers 1 | 1.002 [0.993–1.010] | Hit |
+| H1c | Group claims A/E: model of record above 1, recalibrated covers 1 | 1.017 [1.008–1.025]; 0.999 [0.990–1.007] | Hit |
+| H1 rule | Adopt recalibration if H1b holds and recalibrated A/E covers 1 | Both hold | **Recalibration adopted** |
+| H2a | Specific A/E (logistic, spliced) covers 1 | 0.91 [0.80–1.02] | Hit |
+| H2b | Spliced excess A/E above $100k covers 1 | 0.88 [0.60–1.16] (single GPD: 0.68 [0.46–0.89]) | Hit |
+| H2c | Aggregate breaches within 95% Poisson range | 0 observed, 2.9 expected (range 0–7) | Hit |
+| H2d | No band's recalibrated claims A/E excludes 1 | 250–499: 0.98 [0.963–0.994] | **Miss** |
+
+**Reading.**
+- With the level factor estimated on Samples 3–4, LightGBM's predicted / actual on a fifth sample
+  moves from 0.984 to 1.002, and group claims A/E from 1.017 to 0.999.
+- The single GPD again overstates losses above $100k (A/E 0.68); the spliced tail is in range
+  (0.88) for the second time.
+- Aggregate breaches came in at or below expectation in every complete-year run (Samples 3, 4,
+  5: 2, 2, 0 observed with the baseline against 2.8, 2.4, 2.4 expected; pooled 4 vs 7.6,
+  Poisson P(≤ 4) = 0.12). Not significant, but the direction is consistent: the Tweedie
+  simulation may be too wide (post hoc).
+- The 250–499 band runs 2% below expected with every variant; the cause isn't established.
