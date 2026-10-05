@@ -234,7 +234,7 @@ uv run kedro run --pipeline warehouse     # DuckDB build first
 uv run kedro run --pipeline snowflake     # load, dbt build on Snowflake, reconcile
 ```
 
-Output: `docs/reconciliation_snowflake.md`. **Not run yet**: it's waiting on credentials.
+Output: [`docs/reconciliation_snowflake.md`](docs/reconciliation_snowflake.md). Latest run (Sample 2): all 68,829 member-years and 33 feature columns match DuckDB; 7/7 dbt models and tests pass in both targets. The only differences are in `age` (≤ 5×10⁻⁷, Snowflake rounds division to 6 decimals).
 
 ## Limits
 - **2010 is thin in DE-SynPUF.** Claims per member-month drop 30–40% from 2009, so the
@@ -268,5 +268,5 @@ tests/
 - [x] Pre-registered LightGBM re-test and spliced tail on Sample 4
 - [x] Wire the adopted models into the main pricing pipeline (`pricing_variants`)
 - [x] Pre-registered LightGBM level recalibration, tested on Sample 5
-- [ ] Run the Snowflake load and reconciliation (built; waiting on credentials)
+- [x] Snowflake load, dbt build and Snowflake-vs-DuckDB reconciliation
 - [x] Blog post draft for roncom.github.io (`docs/blog/posts/group-underwriting.md`; not yet published to the site)

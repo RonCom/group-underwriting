@@ -143,3 +143,12 @@ LightGBM's level factor (1.018, from Samples 3–4) is adopted: the model of rec
 recalibrated LightGBM cost, logistic claimants, spliced tail. `pricing_variants` keeps the frozen
 baseline and the pre-Sample-5 record (`record_v1`) for comparison. The holdout results were
 produced with the variant names in force before adoption (`record`, `recalibrated`).
+
+## 2026-10-05: Snowflake build
+
+Raw DE-SynPUF Sample 2 CSVs and the two Kedro inputs (simulated paid dates, cohort rows) were
+loaded into Snowflake (`kedro run --pipeline snowflake`) and the dbt project built there. Two SQL
+fixes were needed for Snowflake, both applied to the shared models: a CTE named `rows` (reserved in
+Snowflake) became `cohort`, and a `SELECT r.member_id, ..., c.*` that duplicated `member_id` now
+lists the claim columns. The DuckDB build was rerun after the fixes and still matches the Kedro
+features; Snowflake matches DuckDB on every row and column.
