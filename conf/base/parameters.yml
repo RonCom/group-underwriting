@@ -131,14 +131,14 @@ pricing_variants:
     claimant: glm
     tail: single
     calibrate: false
-  record:
-    label: "Model of record: LightGBM cost, logistic claimants, spliced tail"
+  record_v1:
+    label: "Record before Sample 5: LightGBM cost, logistic claimants, spliced tail"
     cost: gbm
     claimant: glm
     tail: spliced
     calibrate: false
-  recalibrated:
-    label: "Challenger: model of record with LightGBM level recalibrated"
+  record:
+    label: "Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail"
     cost: gbm
     claimant: glm
     tail: spliced

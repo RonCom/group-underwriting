@@ -135,3 +135,11 @@ is fit on this run's training members plus already-seen samples listed in
 The level factor per cost model is total actual / total predicted on already-seen samples scored
 by the frozen models (`level_calibration.files`: Samples 3 and 4; LightGBM 1.018, GLM 0.999).
 Retraining reproduces the frozen models exactly (same metrics to the dollar).
+
+## 2026-10-05: holdout on Sample 5, recalibration adopted
+
+Pre-registered in `docs/preregistration_holdout.md`, run in the `holdout` Kedro environment.
+LightGBM's level factor (1.018, from Samples 3–4) is adopted: the model of record is now
+recalibrated LightGBM cost, logistic claimants, spliced tail. `pricing_variants` keeps the frozen
+baseline and the pre-Sample-5 record (`record_v1`) for comparison. The holdout results were
+produced with the variant names in force before adoption (`record`, `recalibrated`).
