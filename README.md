@@ -261,7 +261,7 @@ Output: [`docs/reconciliation_snowflake.md`](docs/reconciliation_snowflake.md). 
 - **DE-SynPUF itself is synthetic.** CMS warns it does not preserve relationships between
   variables, so year-over-year signal may be weak. Pre-registered Test 0 decides whether to move
   to Synthea.
-- **Medicare population.** 65+ and disabled beneficiaries, Medicare fee schedules, no commercial
+- **Medicare population.** 65+ and disabled beneficiaries (the 15% under 65 price correctly on their own: group claims A/E 0.998 [0.986–1.008], `docs/under65/results.md`), Medicare fee schedules, no commercial
   network discounts. Group PMPMs are Medicare-level, not employer-level.
 - **Groups are constructed.** No real employer, industry or plan design. Group-level correlation
   comes only from geography.
@@ -291,7 +291,8 @@ tests/
 - [x] Pre-registered aggregate-layer simulation test on Sample 6; empirical ratios adopted
 - [x] Blog post draft for roncom.github.io (`docs/blog/posts/group-underwriting.md`; not yet published to the site)
 - [ ] Publish the blog post
-- [ ] Working-age population: rerun the frozen pipeline on Synthea members (CLAUDE.md fallback)
+- [x] Under-65 subgroup check (Samples 3–6, 44,605 members): 6 of 6 pre-registered predictions hit; group claims A/E 0.998 [0.986–1.008]
+- [ ] Working-age population (Synthea): deferred; Synthea's costs come from lookup tables, so it would test the code more than the pricing
 - [x] The 250–499 band miss: doesn't recur on Samples 3, 4 or 6 (pooled A/E 0.995 [0.987–1.004]); treated as chance
 - [x] IBNR by claim type, pre-registered on Sample 6: better than one triangle (+15.7% vs +24.5% at 2010-12-31) but missed the ±10% bar; not adopted. An upward bias remains in both
 - [ ] Drop "distinct drugs" (duplicates "fills" in DE-SynPUF)

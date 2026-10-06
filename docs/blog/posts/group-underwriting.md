@@ -232,6 +232,9 @@ cost, ahead of any single chronic condition.
 
 ## Limits
 
+- **Medicare members.** Members under 65 (15% of the data, eligible through disability) price
+  correctly on their own: group claims A/E 0.998 [0.986–1.008] across 132 groups. They're still
+  not an employer population.
 - **Synthetic claims, synthetic employers.** DE-SynPUF is a synthetic Medicare population, and I
   built the groups. Group-level correlation comes only from geography.
 - **No plan design.** Allowed cost only: no employee cost sharing, network discounts, lasers, or

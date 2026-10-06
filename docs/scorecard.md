@@ -190,3 +190,22 @@ is 0.995, 1.007, 0.977 and 1.002 (Samples 3–6); pooled over 188 groups it's 0.
 Three pre-registered rounds tested five bands each, so one 95% interval excluding 1 by chance is
 expected. Group A/E is unrelated to how many states a group spans (r = 0.003) or to log group size
 (r = −0.03). Treated as chance; no change.
+
+# Under-65 subgroup (pre-registered in `docs/preregistration_under65.md`; not a holdout)
+
+Run 2026-10-06: 44,605 members under 65 (15.4% of Samples 3–6, Medicare through disability or
+ESRD), 132 groups re-cut from them, model of record. Tables: [`under65/results.md`](under65/results.md).
+**6 of 6 predictions hit.**
+
+| # | Prediction | Result | Verdict |
+|---|---|---|---|
+| U1 | Member predicted / actual 0.95–1.05 | 1.002 [0.991–1.013] | Hit |
+| U2 | Member Gini at least 0.60 | 0.733 [0.725–0.740] | Hit |
+| U3 | Logistic AUC at least 0.75 at $25k and $50k | 0.833; 0.867 | Hit |
+| U4 | Group claims A/E interval covers 1 | 0.998 [0.986–1.008] | Hit |
+| U5 | Excess A/E above $25k and $50k cover 1 | 1.03 [0.98–1.08]; 1.03 [0.93–1.14] | Hit |
+| U6 | PIT variance covers 0.0833 | 0.0876 [0.0738–0.1007] | Hit |
+
+**Reading.** Pricing holds for the under-65 members (mean cost $7,525 against $6,920 for 65+),
+including the simulated spread with a ratio pool drawn only from 65+ members. They're a disabled
+population, not workers, so this narrows the population limit without removing it.
