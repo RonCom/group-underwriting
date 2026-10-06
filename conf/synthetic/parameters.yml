@@ -80,3 +80,4 @@ snowflake:
   runout_months: 3
   specialty_rx_threshold: 1000
   report_file: docs/synthetic/reconciliation_snowflake.md
+  fail_on_mismatch: true

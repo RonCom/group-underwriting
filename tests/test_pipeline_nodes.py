@@ -279,3 +279,26 @@ def test_ibnr_by_source_recovers_ultimate_when_mix_shifts():
         tot.at["by_source", "actual_ibnr"]
     )
     assert abs(tot.at["single", "estimated_ibnr"] / tot.at["single", "actual_ibnr"] - 1) > 0.05
+
+
+def test_compare_marts_flags_row_and_value_differences():
+    from group_underwriting.pipelines.snowflake.nodes import compare_marts
+
+    dk = pd.DataFrame(
+        {
+            "member_id": ["a", "b"],
+            "feature_year": [2008, 2008],
+            "age": [70.0, 71.0],
+            "target_cost": [100.0, 200.0],
+        }
+    )
+    sf = dk.rename(columns=str.upper)
+    same = compare_marts(dk, sf)
+    assert same["mismatches"].sum() == 0
+    sf2 = sf.copy()
+    sf2.loc[1, "TARGET_COST"] = 200.5
+    out = compare_marts(dk, sf2).set_index("column")
+    assert out.at["target_cost", "mismatches"] == 1
+    assert out.at["age", "mismatches"] == 0
+    out = compare_marts(dk, sf.iloc[:1]).set_index("column")
+    assert out.at["(rows)", "mismatches"] == 1

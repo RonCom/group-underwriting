@@ -158,7 +158,7 @@ def signal_check(predictions: pd.DataFrame, features: pd.DataFrame) -> pd.DataFr
     """Exposure-weighted Gini on the 2008 -> 2009 inner validation members.
 
     Compares a constant, prior-year cost alone, the GLM and the GBM. Near-zero Gini for the
-    models means DE-SynPUF carries too little year-over-year signal (see CLAUDE.md).
+    models means DE-SynPUF carries too little year-over-year signal (see the project brief).
     """
     v = predictions[predictions["inner_val"]].merge(
         features[["member_id", "split", "cost_total"]], on=["member_id", "split"]
