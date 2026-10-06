@@ -46,10 +46,6 @@ notebooks/       exploration only; nothing the pipeline depends on
 tests/
 ```
 
-## Git
-- Commits are authored by Chris only: no AI co-author lines or tool attribution in commits, PRs or files.
-- Write commit messages in the imperative, one change per commit.
-
 ## Output
 - A README with results tables and intervals, plus a limits section (synthetic data, Medicare population, group construction).
 - A blog post for roncom.github.io in the same style as the medicare-fwa write-up.
