@@ -1,0 +1,3 @@
+# Aggregate-layer test sample (docs/preregistration_aggregate.md).
+data_root: data/sample6
+frozen_root: data/real

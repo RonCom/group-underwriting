@@ -1,0 +1,4 @@
+# Re-test sample (docs/preregistration_retest.md).
+data_root: data/sample4
+frozen_root: data/real
+calibration_root: data/sample3

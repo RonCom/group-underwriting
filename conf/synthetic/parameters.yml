@@ -1,0 +1,82 @@
+# Offline mode: generated DE-SynPUF-shaped data; results go to docs/synthetic/.
+reporting:
+  seed: 9
+  n_boot: 200
+  shap_sample: 2000
+  top_groups: 5
+  docs_dir: docs/synthetic
+  results_file: docs/synthetic/results.md
+  figures_dir: docs/synthetic/figures
+  label: synthetic
+  evidently_dir: ${runtime_params:data_root,${globals:data_root}}/08_reporting
+  evidently: false
+  mlflow:
+    enabled: false
+    tracking_uri: sqlite:///mlflow.db
+    experiment: group-underwriting-synthetic
+    register_models: false
+
+pricing:
+  seed: 5
+  n_sims: 500
+  n_boot: 200
+  aggregate_corridor: 1.25
+  load: 0.15
+  specific_deductible_by_band:
+    "50-99": 25000
+    "100-249": 50000
+    "250-499": 50000
+    "500-999": 100000
+    "1000-2500": 100000
+
+synthetic:
+  raw_dir: ${runtime_params:data_root,${globals:data_root}}/01_raw
+  seed: 7
+  n_members: 25000
+  annual_trend: 1.05
+
+# Fewer large groups than base so the small synthetic test cohort still has ~50 groups.
+groups:
+  seed: 3
+  salt: group-assign
+  size_bands:
+    - {min: 50,   max: 99,   weight: 0.40}
+    - {min: 100,  max: 249,  weight: 0.35}
+    - {min: 250,  max: 499,  weight: 0.15}
+    - {min: 500,  max: 999,  weight: 0.07}
+    - {min: 1000, max: 2500, weight: 0.03}
+
+warehouse:
+  target: duckdb             # or snowflake (needs SNOWFLAKE_* env vars and RAW/KEDRO tables)
+  data_root: ${runtime_params:data_root,${globals:data_root}}
+  db_path: ${runtime_params:data_root,${globals:data_root}}/05_model_input/warehouse.duckdb
+  runout_months: 3
+  specialty_rx_threshold: 1000
+  fail_on_mismatch: true
+  label: synthetic
+  report_file: docs/synthetic/reconciliation.md
+
+upper_tail:
+  upper_threshold: 100000
+  extra_features: []
+
+level_calibration:
+  files: []
+
+residual_pool:
+  files: []
+  cost: gbm
+  level_factor: 1.0
+  n_bands: 10
+
+snowflake:
+  raw_dir: ${runtime_params:data_root,${globals:data_root}}/01_raw
+  data_root: ${runtime_params:data_root,${globals:data_root}}
+  duckdb_path: ${runtime_params:data_root,${globals:data_root}}/05_model_input/warehouse.duckdb
+  user: GU_SVC
+  role: GU_ROLE
+  warehouse: GU_WH
+  database: GROUP_UNDERWRITING_CI
+  runout_months: 3
+  specialty_rx_threshold: 1000
+  report_file: docs/synthetic/reconciliation_snowflake.md

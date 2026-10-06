@@ -1,0 +1,3 @@
+# Holdout sample (docs/preregistration_holdout.md).
+data_root: data/sample5
+frozen_root: data/real

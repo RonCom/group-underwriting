@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_members
+    description: One row per member and calendar year.
+  - name: stg_claims
+    description: One row per claim, all four claim types, allowed cost and simulated paid date.
+    columns:
+      - name: paid_dt
+        data_tests: [not_null]
+  - name: member_features
+    description: Point-in-time features and next-year cost per cohort row.
+    columns:
+      - name: member_id
+        data_tests: [not_null]
+      - name: target_cost
+        data_tests: [not_null]

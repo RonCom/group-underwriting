@@ -1,0 +1,22 @@
+name: group_underwriting
+version: "1.0.0"
+config-version: 2
+profile: group_underwriting
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  runout_months: 3
+  specialty_rx_threshold: 1000
+
+models:
+  group_underwriting:
+    +materialized: table
+    staging:
+      +schema: stg
+    marts:
+      +schema: mart
