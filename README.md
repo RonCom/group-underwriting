@@ -1,5 +1,7 @@
 # Group underwriting and stop-loss pricing on Medicare claims
 
+**Write-up:** [Pricing stop-loss for employer groups from claims data](https://roncom.github.io/blog/group-underwriting/): the design choices, what the first test got wrong, and five pre-registered rounds of results.
+
 Predicts next-year medical and pharmacy cost for members of employer groups, the probability that
 a member crosses a stop-loss specific deductible, the tail of large claims above it, and the
 resulting specific and aggregate stop-loss cost per group, then compares those prices with what
@@ -289,8 +291,7 @@ tests/
 - [x] Pre-registered LightGBM level recalibration, tested on Sample 5
 - [x] Snowflake load, dbt build and Snowflake-vs-DuckDB reconciliation
 - [x] Pre-registered aggregate-layer simulation test on Sample 6; empirical ratios adopted
-- [x] Blog post draft for roncom.github.io (`docs/blog/posts/group-underwriting.md`; not yet published to the site)
-- [ ] Publish the blog post
+- [x] Blog post published: [Pricing stop-loss for employer groups from claims data](https://roncom.github.io/blog/group-underwriting/)
 - [x] Under-65 subgroup check (Samples 3–6, 44,605 members): 6 of 6 pre-registered predictions hit; group claims A/E 0.998 [0.986–1.008]
 - [ ] Working-age population (Synthea): deferred; Synthea's costs come from lookup tables, so it would test the code more than the pricing
 - [x] The 250–499 band miss: doesn't recur on Samples 3, 4 or 6 (pooled A/E 0.995 [0.987–1.004]); treated as chance
