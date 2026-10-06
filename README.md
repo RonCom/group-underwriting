@@ -6,12 +6,12 @@ resulting specific and aggregate stop-loss cost per group, then compares those p
 actually happened the following year. Built as Kedro pipelines on CMS DE-SynPUF claims, with a dbt
 feature mart reconciled row for row against the Python features.
 
-> **Status:** four pre-registered rounds on DE-SynPUF Samples 2–5 (scorecard:
-> [`docs/scorecard.md`](docs/scorecard.md)). Model of record: recalibrated LightGBM cost,
-> logistic claimant model, Pareto tail spliced at $100k. On Sample 5, which no model, tail or
-> calibration step had seen, group claims come in at 0.999 [0.990–1.007] of expected across 205
-> groups. The original out-of-time year, 2010, can't check price levels: DE-SynPUF's 2010 claims
-> are 30–40% thinner than 2009's.
+> **Status:** five pre-registered rounds on DE-SynPUF Samples 2–6 (scorecard:
+> [`docs/scorecard.md`](docs/scorecard.md)). Model of record: recalibrated LightGBM cost, logistic
+> claimant model, Pareto tail spliced at $100k, and group totals simulated by resampling
+> actual-to-predicted ratios. On samples no model had seen, group claims come in at 0.995–1.001 of
+> expected. The original out-of-time year, 2010, can't check price levels: DE-SynPUF's 2010
+> claims are 30–40% thinner than 2009's.
 
 ## Question
 Using only claims visible at a pricing date, can member-level models price specific and aggregate
@@ -170,6 +170,20 @@ Tables: [`docs/holdout/results.md`](docs/holdout/results.md).
   all three complete-year runs (pooled 4 observed vs 7.6 expected, Poisson P(≤ 4) = 0.12).
 - **Miss:** the 250–499 band runs 2% below expected (0.98 [0.963–0.994]) with every configuration.
 
+### Aggregate layer: the simulated spread (DE-SynPUF Sample 6)
+Aggregate breaches came in below expectation on Samples 3–5, so the simulation of group net
+claims became a pre-registered test on Sample 6 (72,216 members, 206 groups). 5 of 5 predictions
+hit. Tables: [`docs/aggtest/results.md`](docs/aggtest/results.md).
+
+| Member-cost simulation | PIT variance (uniform = 0.0833) | Mean squared z (target 1) | Breaches (expected) | Expected aggregate cost PMPM |
+|---|---|---|---|---|
+| Tweedie, dispersion from uncapped cost | 0.060 [0.052–0.067] | 0.58 [0.48–0.71] | 0 (3.1) | $0.109 |
+| **Resampled actual / predicted ratios (adopted)** | 0.083 [0.072–0.091] | 0.95 [0.79–1.14] | 0 (1.0) | $0.024 |
+
+PIT value: the share of a group's simulated net claims below its actual net claims; uniform PIT
+values mean the simulated distribution has the right spread. The Tweedie spread was about 1.3×
+too wide, which overpriced the aggregate layer about 4.5×. Group claims A/E is unchanged (1.001).
+
 The synthetic mode (generated data, used for CI) has its own results in
 [`docs/synthetic/results.md`](docs/synthetic/results.md); a full synthetic run takes ~45 s.
 
@@ -200,6 +214,10 @@ uv run kedro run --env retest --pipeline retest
 # Holdout: Sample 5 (needs the Sample 3 and 4 runs for the level factor and disjointness check)
 uv run python -m group_underwriting.download --sample 5 --dest data/sample5/01_raw
 uv run kedro run --env holdout --pipeline holdout
+
+# Aggregate-layer test: Sample 6 (pool of seen ratios from Samples 3-5)
+uv run python -m group_underwriting.download --sample 6 --dest data/sample6/01_raw
+uv run kedro run --env aggtest --pipeline aggtest
 
 uv run pytest
 ```
@@ -253,9 +271,9 @@ Output: [`docs/reconciliation_snowflake.md`](docs/reconciliation_snowflake.md). 
 
 ## Repo layout
 ```
-conf/            Kedro config: base (real data), synthetic, followup, retest, holdout, local (git-ignored)
+conf/            Kedro config: base (real data), synthetic, followup, retest, holdout, aggtest, local (git-ignored)
 src/             Kedro pipelines: ingest, features, models, tail, pricing, reporting, runout,
-                 synthetic, warehouse, followup, retest, holdout; metrics.py; download.py
+                 synthetic, warehouse, followup, retest, holdout, snowflake, aggtest; metrics.py; download.py
 dbt/             staging and feature-mart models (DuckDB, Snowflake target)
 docs/            decisions.md, preregistration.md, scorecard.md, results.md; synthetic/
 notebooks/       exploration only
@@ -269,4 +287,11 @@ tests/
 - [x] Wire the adopted models into the main pricing pipeline (`pricing_variants`)
 - [x] Pre-registered LightGBM level recalibration, tested on Sample 5
 - [x] Snowflake load, dbt build and Snowflake-vs-DuckDB reconciliation
+- [x] Pre-registered aggregate-layer simulation test on Sample 6; empirical ratios adopted
 - [x] Blog post draft for roncom.github.io (`docs/blog/posts/group-underwriting.md`; not yet published to the site)
+- [ ] Publish the blog post
+- [ ] Working-age population: rerun the frozen pipeline on Synthea members (CLAUDE.md fallback)
+- [ ] The 250–499 band runs 2–4% below expected (Sample 5, 2010 relative test); check whether group construction by state and county drives it
+- [ ] IBNR triangles by claim type (tests the inpatient-mix explanation for the IBNR miss)
+- [ ] Drop "distinct drugs" (duplicates "fills" in DE-SynPUF)
+- [ ] Manually triggered CI job for the Snowflake pipeline using repository secrets
