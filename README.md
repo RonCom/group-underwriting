@@ -295,4 +295,4 @@ tests/
 - [x] The 250–499 band miss: doesn't recur on Samples 3, 4 or 6 (pooled A/E 0.995 [0.987–1.004]); treated as chance
 - [x] IBNR by claim type, pre-registered on Sample 6: better than one triangle (+15.7% vs +24.5% at 2010-12-31) but missed the ±10% bar; not adopted. An upward bias remains in both
 - [ ] Drop "distinct drugs" (duplicates "fills" in DE-SynPUF)
-- [ ] Manually triggered CI job for the Snowflake pipeline using repository secrets
+- [ ] Run the manual "Snowflake" workflow (`.github/workflows/snowflake.yml`): needs the CI database lines at the end of `snowflake/setup.sql` and repository secrets `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_PRIVATE_KEY`
