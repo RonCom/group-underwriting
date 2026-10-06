@@ -1,0 +1,10 @@
+# Every eligible member of the follow-up sample is test: 2008 features -> 2009 cost.
+# train_year = test_year makes the trend factor exactly 1 (same period as training).
+cohorts:
+  split_salt: cohort-split
+  train_share: 0.0
+  train_year: 2008
+  test_year: 2008
+
+followup:
+  results_file: docs/followup/results.md

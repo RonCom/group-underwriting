@@ -1,0 +1,20 @@
+# Frozen artifacts from the Sample 2 run.
+cost_models:
+  type: pickle.PickleDataset
+  filepath: ${globals:frozen_root}/06_models/cost_models.pkl
+
+hcc_models:
+  type: pickle.PickleDataset
+  filepath: ${globals:frozen_root}/06_models/hcc_models.pkl
+
+tail_fit:
+  type: pandas.ParquetDataset
+  filepath: ${globals:frozen_root}/07_model_output/tail_fit.parquet
+
+frozen_members:
+  type: pandas.ParquetDataset
+  filepath: ${globals:frozen_root}/02_intermediate/members.parquet
+
+frozen_group_pricing:
+  type: pandas.ParquetDataset
+  filepath: ${globals:frozen_root}/07_model_output/group_pricing.parquet

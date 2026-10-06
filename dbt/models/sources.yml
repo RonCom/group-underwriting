@@ -1,0 +1,36 @@
+version: 2
+
+# On DuckDB, raw tables are read straight from the DE-SynPUF CSVs (all columns as text) and the
+# Kedro outputs the mart depends on are read from parquet. On Snowflake they are tables in RAW,
+# loaded with COPY INTO (filename from METADATA$FILENAME).
+sources:
+  - name: raw
+    schema: "{{ 'RAW' if target.type == 'snowflake' else 'main' }}"
+    description: DE-SynPUF Sample 1 files, all columns as text, plus the source file name.
+    tables:
+      - name: beneficiary
+        meta:
+          external_location: "read_csv('{{ env_var('GU_DATA_ROOT') }}/01_raw/*Beneficiary_Summary_File*.csv', all_varchar=true, filename=true, union_by_name=true)"
+      - name: inpatient
+        meta:
+          external_location: "read_csv('{{ env_var('GU_DATA_ROOT') }}/01_raw/*Inpatient_Claims*.csv', all_varchar=true, filename=true, union_by_name=true)"
+      - name: outpatient
+        meta:
+          external_location: "read_csv('{{ env_var('GU_DATA_ROOT') }}/01_raw/*Outpatient_Claims*.csv', all_varchar=true, filename=true, union_by_name=true)"
+      - name: carrier
+        meta:
+          external_location: "read_csv('{{ env_var('GU_DATA_ROOT') }}/01_raw/*Carrier_Claims*.csv', all_varchar=true, filename=true, union_by_name=true)"
+      - name: pde
+        meta:
+          external_location: "read_csv('{{ env_var('GU_DATA_ROOT') }}/01_raw/*Prescription_Drug_Events*.csv', all_varchar=true, filename=true, union_by_name=true)"
+
+  - name: kedro
+    schema: "{{ 'KEDRO' if target.type == 'snowflake' else 'main' }}"
+    description: Kedro outputs the SQL mart needs (simulated paid dates, cohort and group assignment).
+    tables:
+      - name: claims
+        meta:
+          external_location: "read_parquet('{{ env_var('GU_DATA_ROOT') }}/02_intermediate/claims.parquet')"
+      - name: member_groups
+        meta:
+          external_location: "read_parquet('{{ env_var('GU_DATA_ROOT') }}/03_primary/member_groups.parquet')"

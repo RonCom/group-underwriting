@@ -1,0 +1,39 @@
+cohorts:
+  split_salt: cohort-split
+  train_share: 0.0
+  train_year: 2008
+  test_year: 2008
+
+aggtest:
+  results_file: docs/aggtest/results.md
+  seen_member_files:
+    - data/real/02_intermediate/members.parquet
+    - data/sample3/02_intermediate/members.parquet
+    - data/sample4/02_intermediate/members.parquet
+    - data/sample5/02_intermediate/members.parquet
+
+# Frozen pool: actual / predicted ratios from already-seen Samples 3-5, model of record.
+residual_pool:
+  files:
+    - data/sample3/07_model_output/predictions.parquet
+    - data/sample4/07_model_output/predictions.parquet
+    - data/sample5/07_model_output/predictions.parquet
+  cost: gbm
+  level_factor: 1.0179521848452822   # = data/real/07_model_output/level_calibration.parquet (gbm)
+  n_bands: 10
+
+aggtest_variants:
+  tweedie:
+    label: "Tweedie (frozen)"
+    cost: gbm
+    claimant: glm
+    tail: spliced
+    calibrate: true
+    simulation: tweedie
+  empirical:
+    label: "Empirical ratios (challenger)"
+    cost: gbm
+    claimant: glm
+    tail: spliced
+    calibrate: true
+    simulation: empirical

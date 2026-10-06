@@ -1,0 +1,3 @@
+# Follow-up sample (docs/preregistration_followup.md); models come from data/real.
+data_root: data/sample3
+frozen_root: data/real

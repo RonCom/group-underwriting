@@ -1,0 +1,62 @@
+[project]
+name = "group-underwriting"
+version = "0.1.0"
+description = "Employer-group PMPM, high-cost claimant and stop-loss pricing models on CMS DE-SynPUF claims, as Kedro pipelines"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "duckdb>=1.5.6",
+    "kedro>=1.0",
+    "kedro-datasets[pandas-csvdataset,pandas-parquetdataset]>=9.6.0",
+    "lightgbm>=4.7.0",
+    "matplotlib>=3.11.2",
+    "mlflow>=3.16.1",
+    "numpy>=2.4.6",
+    "pandas>=3.0.6",
+    "pyarrow>=25.0.1",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.17.1",
+    "shap>=0.51.0",
+]
+
+[project.optional-dependencies]
+drift = [
+    "evidently>=0.7.23",
+]
+dbt = [
+    "dbt-duckdb>=1.11.0",
+]
+snowflake = [
+    "dbt-snowflake>=1.12.1",
+    "snowflake-connector-python>=4.8.0",
+]
+
+[project.scripts]
+group-underwriting = "group_underwriting.__main__:main"
+
+[build-system]
+requires = ["uv_build>=0.8.17,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[tool.kedro]
+package_name = "group_underwriting"
+project_name = "group-underwriting"
+kedro_init_version = "1.7.0"
+source_dir = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B"]
+ignore = ["E501"]
