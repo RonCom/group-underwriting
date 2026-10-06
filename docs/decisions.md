@@ -7,7 +7,7 @@ Dated log of choices that change what the numbers mean. Newest last.
 **Data source.** CMS DE-SynPUF Sample 1 (changed to Sample 2 below) (Beneficiary Summary 2008–2010, Inpatient, Outpatient,
 Carrier A/B, Prescription Drug Events). The CMS download hosts were blocked from the environment
 the project was built in, so the first build runs only on generated data (`--env synthetic`). The
-Synthea fallback in CLAUDE.md is triggered by the pre-registered signal check
+Synthea fallback in the project brief is triggered by the pre-registered signal check
 (`docs/preregistration.md`, Test 0), not yet run.
 
 **Allowed cost.** DE-SynPUF facility claims carry payments, not allowed amounts. Allowed is rebuilt

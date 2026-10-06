@@ -1,4 +1,4 @@
-# CLAUDE.md — group-underwriting
+# PROJECT.md — group-underwriting
 
 ## Purpose
 Portfolio project for a Lead Data Scientist application at ParetoHealth (a benefits captive that funds employer health plans with stop-loss). It shows predictive underwriting and pricing on claims and pharmacy data. A companion project, `RonCom/medicare-fwa`, already covers XGBoost, calibration, out-of-time validation, explainability and optimization. Don't rebuild those; this repo covers what that one doesn't:
@@ -45,10 +45,6 @@ docs/            decisions.md, preregistration.md, results.md
 notebooks/       exploration only; nothing the pipeline depends on
 tests/
 ```
-
-## Git
-- Never add `Co-Authored-By: Claude` or any Claude attribution to commits. Claude is never the commit author.
-- Write commit messages in the imperative, one change per commit.
 
 ## Output
 - A README with results tables and intervals, plus a limits section (synthetic data, Medicare population, group construction).

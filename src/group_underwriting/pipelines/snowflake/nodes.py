@@ -200,13 +200,12 @@ def run_dbt_snowflake(
     return pd.DataFrame([{"target": "snowflake", "status": "success"}])
 
 
-def reconcile_snowflake(dbt_done: pd.DataFrame, params: dict) -> pd.DataFrame:
-    """Compare MART.MEMBER_FEATURES in Snowflake with the DuckDB mart, every row and column."""
-    with _connect(params) as con:
-        sf = con.cursor().execute("SELECT * FROM MART.MEMBER_FEATURES").fetch_pandas_all()
-    sf.columns = [c.lower() for c in sf.columns]
-    with duckdb.connect(params["duckdb_path"], read_only=True) as con:
-        dk = con.execute("SELECT * FROM mart.member_features").df()
+def compare_marts(dk: pd.DataFrame, sf: pd.DataFrame) -> pd.DataFrame:
+    """Row and per-column mismatch counts between the DuckDB and Snowflake feature marts.
+
+    Values match when |a - b| <= 1e-6 * max(1, |a|); rows are matched on member and year.
+    """
+    sf = sf.rename(columns=str.lower)
     key = ["member_id", "feature_year"]
     cols = [c for c in [*FEATURES, "target_cost"] if c in sf.columns and c in dk.columns]
     m = dk[key + cols].merge(
@@ -233,22 +232,39 @@ def reconcile_snowflake(dbt_done: pd.DataFrame, params: dict) -> pd.DataFrame:
                 "duckdb_rows": len(dk),
                 "snowflake_rows": len(sf),
                 "mismatches": int(bad.sum()),
-                "max_abs_diff": float(diff.max()),
+                "max_abs_diff": float(diff.max()) if len(diff) else float("nan"),
             }
         )
-    out = pd.DataFrame(rows)
+    return pd.DataFrame(rows)
+
+
+def reconcile_snowflake(dbt_done: pd.DataFrame, params: dict) -> pd.DataFrame:
+    """Compare MART.MEMBER_FEATURES in Snowflake with the DuckDB mart, every row and column.
+
+    Writes the report, then raises if anything differs (unless `fail_on_mismatch` is false), so
+    a mismatch fails the run.
+    """
+    with _connect(params) as con:
+        sf = con.cursor().execute("SELECT * FROM MART.MEMBER_FEATURES").fetch_pandas_all()
+    with duckdb.connect(params["duckdb_path"], read_only=True) as con:
+        dk = con.execute("SELECT * FROM mart.member_features").df()
+    out = compare_marts(dk, sf)
+    n_cols = len(out) - 1
     status = "MATCH" if out["mismatches"].sum() == 0 else "MISMATCH"
     lines = [
         "# Reconciliation: Snowflake vs DuckDB `mart.member_features`",
         "",
         f"Status: **{status}**. {len(dk):,} DuckDB rows, {len(sf):,} Snowflake rows, "
-        f"{len(cols)} columns compared.",
+        f"{n_cols} columns compared.",
         "",
         "| Column | Mismatches | Max abs diff |",
         "|---|---|---|",
         *[f"| {r.column} | {r.mismatches} | {r.max_abs_diff:.2g} |" for r in out.itertuples()],
         "",
     ]
-    Path(params["report_file"]).write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    path = Path(params["report_file"])
+    path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     log.info("Snowflake reconciliation %s", status)
+    if status != "MATCH" and params.get("fail_on_mismatch", True):
+        raise ValueError(f"Snowflake and DuckDB feature marts differ; see {path}")
     return out
