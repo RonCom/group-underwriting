@@ -1,5 +1,7 @@
 # Group underwriting and stop-loss pricing on Medicare claims
 
+[![CI](https://github.com/RonCom/group-underwriting/actions/workflows/ci.yml/badge.svg)](https://github.com/RonCom/group-underwriting/actions/workflows/ci.yml)
+
 **Write-up:** [Pricing stop-loss for employer groups from claims data](https://roncom.github.io/blog/group-underwriting/): the design choices, what the first test got wrong, and five pre-registered rounds of results.
 
 Predicts next-year medical and pharmacy cost for members of employer groups, the probability that
