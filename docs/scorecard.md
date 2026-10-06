@@ -209,3 +209,24 @@ ESRD), 132 groups re-cut from them, model of record. Tables: [`under65/results.m
 **Reading.** Pricing holds for the under-65 members (mean cost $7,525 against $6,920 for 65+),
 including the simulated spread with a ratio pool drawn only from 65+ members. They're a disabled
 population, not workers, so this narrows the population limit without removing it.
+
+# Credibility blending (pre-registered in `docs/preregistration_credibility.md`)
+
+Run 2026-10-06: DE-SynPUF Sample 7 (72,309 members, none in Samples 2–6; 207 groups), constants
+frozen on Samples 3–6. Full table: [`credibility/results.md`](credibility/results.md).
+**4 of 4 predictions hit.**
+
+| # | Prediction | Result | Verdict |
+|---|---|---|---|
+| C1 | Model of record: blending changes group PMPM MAE by −2% to +2%, interval covers 0 | −0.4% [−1.5% to +0.6%] | Hit |
+| C2 | Demographic: blending reduces MAE 20%–40%, interval below 0 | −34.7% [−44.6% to −22.5%] | Hit |
+| C3 | Model of record unblended beats the blended demographic rate | $28.09 vs $34.65; difference −$6.55 [−10.48 to −2.57] | Hit |
+| C4 | Blended model-of-record claims A/E covers 1 | 1.001 [0.991–1.010] | Hit |
+| Rule | Adopt blending if the C1 interval is below 0 | Covers 0 | **Not adopted** |
+
+**Reading.** The fitted credibility constant for the claims model is 293,317 member-months, so a
+100-life group puts 0.4% weight on its own experience and a 1,000-life group about 4%. The
+member-level model already uses every member's prior-year cost, so the group's total adds nothing.
+Against a demographic manual rate (k = 3,409, a 100-life group gets 26% weight) experience cuts
+group pricing error by a third, and the result is still $6.55 PMPM worse than the claims model
+alone.
