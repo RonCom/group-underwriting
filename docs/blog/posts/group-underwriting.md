@@ -237,7 +237,8 @@ cost, ahead of any single chronic condition.
 - **No plan design.** Allowed cost only: no employee cost sharing, network discounts, lasers, or
   run-in / run-out contract terms.
 - **Paid dates are simulated,** so the runout and IBNR results test the chain-ladder method
-  against lags I chose. The estimate missed its ±10% target (+11% and +21%).
+  against lags I chose. The estimate missed its ±10% target (+11% and +21%). Separate triangles
+  by claim type cut the error but still missed the target on a fresh sample (+15.7%).
 - **Independent groups.** The simulation draws members independently within a group, so it
   can't represent correlated claims (an outbreak, a plant closure) that real employers have.
 - **2010 is unusable for levels** in DE-SynPUF, so the out-of-time test only checks ranking; the
