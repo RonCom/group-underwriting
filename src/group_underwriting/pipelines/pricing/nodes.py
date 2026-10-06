@@ -84,11 +84,33 @@ def price_groups(
     return pd.concat(out, ignore_index=True)
 
 
-def _price(test: pd.DataFrame, rng, p: float, phi: float, params: dict) -> pd.DataFrame:
+def _empirical_draws(
+    rng, pred: np.ndarray, exposure: np.ndarray, pool: pd.DataFrame, n_sims: int
+) -> np.ndarray:
+    """Member annual costs as pred x exposure x a ratio resampled from already-seen members in
+    the same band of predicted rate (`pool`: columns band_lo, band_hi, ratio). Shape (n_sims, n)."""
+    edges = np.sort(pool["band_lo"].unique())
+    band = np.searchsorted(edges, pred, side="right") - 1
+    out = np.empty((n_sims, len(pred)))
+    for b in np.unique(band):
+        ratios = pool.loc[pool["band_lo"] == edges[b], "ratio"].to_numpy()
+        cols = np.flatnonzero(band == b)
+        out[:, cols] = rng.choice(ratios, size=(n_sims, len(cols)))
+    return out * pred * exposure
+
+
+def _price(
+    test: pd.DataFrame, rng, p: float, phi: float, params: dict, pool: pd.DataFrame | None = None
+) -> pd.DataFrame:
+    """Price each group. Member cost draws are Tweedie(mu, phi) unless `pool` is given, in which
+    case they resample actual / predicted ratios (`_empirical_draws`)."""
     rows = []
     for gid, g in test.groupby("group_id", sort=True):
         e = g["exposure"].to_numpy()
-        sims = _tweedie_draws(rng, g["pred"].to_numpy(), phi / e, p, params["n_sims"]) * e
+        if pool is None:
+            sims = _tweedie_draws(rng, g["pred"].to_numpy(), phi / e, p, params["n_sims"]) * e
+        else:
+            sims = _empirical_draws(rng, g["pred"].to_numpy(), e, pool, params["n_sims"])
         net_sims = np.minimum(sims, g["deductible"].to_numpy()).sum(axis=1)
         exp_claims = g["mu"].sum()
         exp_spec = g["exp_specific"].sum()
@@ -115,6 +137,9 @@ def _price(test: pd.DataFrame, rng, p: float, phi: float, params: dict) -> pd.Da
                 "actual_specific": act_spec,
                 "actual_net": act_net,
                 "actual_aggregate": max(act_net - attach, 0.0),
+                "net_sim_sd": float(net_sims.std()),
+                # mid-rank PIT of the actual net claims within the simulated distribution
+                "pit": float(np.mean(net_sims < act_net) + 0.5 * np.mean(net_sims == act_net)),
             }
         )
     out = pd.DataFrame(rows)
@@ -171,11 +196,14 @@ def price_variants(
     calibration: pd.DataFrame,
     variants: dict,
     params: dict,
+    residual_pool: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Price every test group under each named model configuration.
 
     A variant picks the cost model, the claimant model behind the specific excess, the tail
-    (`single` GPD or `spliced`) and whether the cost model's level calibration factor is applied.
+    (`single` GPD or `spliced`), whether the cost model's level calibration factor is applied,
+    and the member-cost simulation (`tweedie`, the default, or `empirical`, which needs
+    `residual_pool`).
     """
     test = features.loc[
         features["split"] == "test",
@@ -204,7 +232,33 @@ def price_variants(
         pred = test[f"pred_{v['cost']}"] * factor
         t = test.assign(pred=pred, mu=pred * test["exposure"], exp_specific=exp_spec)
         rng = np.random.default_rng(params["seed"])
-        priced = _price(t, rng, cost_models["tweedie_power"], cost_models["phi"][v["cost"]], params)
+        empirical = v.get("simulation", "tweedie") == "empirical"
+        if empirical and residual_pool is None:
+            raise ValueError(f"Variant {name} needs a residual pool")
+        priced = _price(
+            t,
+            rng,
+            cost_models["tweedie_power"],
+            cost_models["phi"][v["cost"]],
+            params,
+            pool=residual_pool if empirical else None,
+        )
         out.append(priced.assign(model=name, label=v["label"]))
         log.info("Priced variant %s (level factor %.4f)", name, factor)
     return pd.concat(out, ignore_index=True)
+
+
+def build_residual_pool(params: dict) -> pd.DataFrame:
+    """Actual / predicted annual cost ratios from already-seen samples scored by the frozen
+    models, in `n_bands` equal-count bands of predicted rate. Predictions use the cost model and
+    level factor named in `params`."""
+    frames = [pd.read_parquet(f) for f in params["files"]]
+    p = pd.concat(frames)
+    p = p[p["split"] == "test"]
+    rate = p[f"pred_{params['cost']}"] * params["level_factor"]
+    ratio = p["target_cost"] / (rate * p["exposure"])
+    edges = np.quantile(rate, np.linspace(0, 1, params["n_bands"] + 1)[:-1])
+    edges[0] = -np.inf
+    band = np.searchsorted(edges, rate, side="right") - 1
+    log.info("Residual pool: %d members in %d bands", len(p), params["n_bands"])
+    return pd.DataFrame({"band_lo": edges[band], "ratio": ratio.to_numpy()})
