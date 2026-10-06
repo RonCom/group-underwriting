@@ -111,3 +111,7 @@ level_calibration:
 spliced_member_excess:
   <<: *parquet
   filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/spliced_member_excess.parquet
+
+residual_pool:
+  <<: *parquet
+  filepath: ${runtime_params:data_root,${globals:data_root}}/07_model_output/residual_pool.parquet

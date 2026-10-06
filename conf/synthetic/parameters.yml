@@ -62,3 +62,9 @@ upper_tail:
 
 level_calibration:
   files: []
+
+residual_pool:
+  files: []
+  cost: gbm
+  level_factor: 1.0
+  n_bands: 10

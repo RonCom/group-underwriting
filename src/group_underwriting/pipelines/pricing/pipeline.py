@@ -1,11 +1,17 @@
 from kedro.pipeline import Pipeline, node
 
-from .nodes import price_variants, summarize_by_band
+from .nodes import build_residual_pool, price_variants, summarize_by_band
 
 
 def create_pipeline(**kwargs) -> Pipeline:
     return Pipeline(
         [
+            node(
+                build_residual_pool,
+                "params:residual_pool",
+                "residual_pool",
+                name="build_residual_pool",
+            ),
             node(
                 price_variants,
                 [
@@ -17,6 +23,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                     "level_calibration",
                     "params:pricing_variants",
                     "params:pricing",
+                    "residual_pool",
                 ],
                 "group_pricing",
                 name="price_groups",

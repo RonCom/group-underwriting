@@ -137,12 +137,31 @@ pricing_variants:
     claimant: glm
     tail: spliced
     calibrate: false
-  record:
-    label: "Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail"
+  record_v2:
+    label: "Record before Sample 6: recalibrated LightGBM, logistic, spliced tail, Tweedie simulation"
     cost: gbm
     claimant: glm
     tail: spliced
     calibrate: true
+    simulation: tweedie
+  record:
+    label: "Model of record: recalibrated LightGBM, logistic, spliced tail, empirical simulation"
+    cost: gbm
+    claimant: glm
+    tail: spliced
+    calibrate: true
+    simulation: empirical
+
+# Actual / predicted ratios from already-seen samples scored by the frozen models (adopted after
+# the Sample 6 test). Missing files are skipped; with none, empirical variants use Tweedie.
+residual_pool:
+  files:
+    - data/sample3/07_model_output/predictions.parquet
+    - data/sample4/07_model_output/predictions.parquet
+    - data/sample5/07_model_output/predictions.parquet
+  cost: gbm
+  level_factor: 1.0179521848452822
+  n_bands: 10
 
 # Snowflake (pipeline `snowflake`). Account, user and key come from SNOWFLAKE_* env vars.
 snowflake:

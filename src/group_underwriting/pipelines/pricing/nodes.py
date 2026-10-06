@@ -16,6 +16,7 @@ actual loss ratio = actual claims / premium.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -233,8 +234,9 @@ def price_variants(
         t = test.assign(pred=pred, mu=pred * test["exposure"], exp_specific=exp_spec)
         rng = np.random.default_rng(params["seed"])
         empirical = v.get("simulation", "tweedie") == "empirical"
-        if empirical and residual_pool is None:
-            raise ValueError(f"Variant {name} needs a residual pool")
+        if empirical and (residual_pool is None or residual_pool.empty):
+            log.warning("Variant %s: no residual pool, simulating with Tweedie", name)
+            empirical = False
         priced = _price(
             t,
             rng,
@@ -252,7 +254,10 @@ def build_residual_pool(params: dict) -> pd.DataFrame:
     """Actual / predicted annual cost ratios from already-seen samples scored by the frozen
     models, in `n_bands` equal-count bands of predicted rate. Predictions use the cost model and
     level factor named in `params`."""
-    frames = [pd.read_parquet(f) for f in params["files"]]
+    frames = [pd.read_parquet(f) for f in params["files"] if Path(f).exists()]
+    if not frames:
+        log.warning("No residual-pool files found; empirical variants fall back to Tweedie")
+        return pd.DataFrame({"band_lo": [], "ratio": []})
     p = pd.concat(frames)
     p = p[p["split"] == "test"]
     rate = p[f"pred_{params['cost']}"] * params["level_factor"]
