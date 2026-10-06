@@ -168,3 +168,11 @@ Pre-registered in `docs/preregistration_ibnr.md` and run on Sample 6. By-claim-t
 the single triangle at both valuations but missed the ±10% bar at 2010-12-31 (+15.7%), so the
 single triangle stays the method of record. Reports now show both methods (`ibnr.methods`).
 The 250–499 band miss on Sample 5 was checked post hoc across Samples 3–6 and treated as chance.
+
+## 2026-10-06: credibility blending tested, not adopted
+
+Pre-registered in `docs/preregistration_credibility.md`, constants fitted on Samples 3–6 and tested
+on Sample 7 (`scripts/credibility_test.py`). Blending group experience into the model of record
+changed group pricing error by −0.4% [−1.5% to +0.6%], so it isn't adopted. The same blend into a
+demographic manual rate cut error by 35%, which shows the claims model already carries what group
+experience would add.

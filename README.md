@@ -187,6 +187,20 @@ PIT value: the share of a group's simulated net claims below its actual net clai
 values mean the simulated distribution has the right spread. The Tweedie spread was about 1.3×
 too wide, which overpriced the aggregate layer about 4.5×. Group claims A/E is unchanged (1.001).
 
+### Credibility: does a group's own experience add anything? (DE-SynPUF Sample 7)
+Underwriters blend a manual rate with a group's own claims history, weighted by credibility
+Z = n / (n + k). Constants were fitted on Samples 3–6 and tested on Sample 7 (72,309 members, 207
+groups); 4 of 4 pre-registered predictions hit. Table: [`docs/credibility/results.md`](docs/credibility/results.md).
+
+| Manual rate | k (member-months) | Median Z | Group PMPM MAE, manual | Blended | Change |
+|---|---|---|---|---|---|
+| Model of record (member claims model) | 293,317 | 0.008 | $28.09 | $27.97 | −0.4% [−1.5% to +0.6%] |
+| Demographic (age band × sex) | 3,409 | 0.395 | $53.07 | $34.65 | −34.7% [−44.6% to −22.5%] |
+
+The claims model already uses every member's prior-year cost, so group experience earns under 1%
+weight and isn't adopted. Against a demographic rate it earns about 40% and cuts error by a third,
+which still leaves it $6.55 PMPM worse than the claims model alone.
+
 The synthetic mode (generated data, used for CI) has its own results in
 [`docs/synthetic/results.md`](docs/synthetic/results.md); a full synthetic run takes ~45 s.
 
@@ -292,6 +306,7 @@ tests/
 - [x] Snowflake load, dbt build and Snowflake-vs-DuckDB reconciliation
 - [x] Pre-registered aggregate-layer simulation test on Sample 6; empirical ratios adopted
 - [x] Blog post published: [Pricing stop-loss for employer groups from claims data](https://roncom.github.io/blog/group-underwriting/)
+- [x] Credibility blending of group experience, pre-registered on Sample 7: not adopted (−0.4% change in group pricing error)
 - [x] Under-65 subgroup check (Samples 3–6, 44,605 members): 6 of 6 pre-registered predictions hit; group claims A/E 0.998 [0.986–1.008]
 - [ ] Working-age population (Synthea): deferred; Synthea's costs come from lookup tables, so it would test the code more than the pricing
 - [x] The 250–499 band miss: doesn't recur on Samples 3, 4 or 6 (pooled A/E 0.995 [0.987–1.004]); treated as chance
