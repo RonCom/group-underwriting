@@ -165,3 +165,28 @@ Run 2026-10-06: DE-SynPUF Sample 6 (72,216 members, none in Samples 2–5; 206 g
 - The aggregate layer's expected cost falls by about 78% under the adopted simulation. With a
   125% corridor, a breach needs a group's net claims 25% above expected, which the narrower
   distribution makes rarer: expected breaches drop from 3.1 to 1.0 on Sample 6.
+
+# IBNR by claim type (pre-registered in `docs/preregistration_ibnr.md`)
+
+Run 2026-10-06 on DE-SynPUF Sample 6 claims (simulated paid dates). **2 of 3 predictions hit.**
+
+| # | Prediction | Result | Verdict |
+|---|---|---|---|
+| I1 | Single triangle at 2010-12-31: error above +10% | +24.5% | Hit |
+| I2 | By claim type: error within ±10% at both valuations | +8.3% (2009-12-31), +15.7% (2010-12-31) | **Miss** |
+| I3 | By claim type has the smaller absolute error at 2010-12-31 | 15.7% vs 24.5% | Hit |
+| Rule | Adopt by claim type if I2 holds | I2 missed | **Single triangle stays** |
+
+**Reading.**
+- Splitting by claim type removes part of the bias at both valuations on Sample 6 (12.8% → 8.3%,
+  24.5% → 15.7%), but on Sample 6 it doesn't remove all of it the way it did on Sample 2 (−1.1%).
+- Both methods overestimate at every valuation on both samples (+8% to +25%), so a second source
+  of upward bias remains besides the claim mix. Not identified.
+
+# Post hoc: the 250–499 band (not pre-registered)
+
+The H2d miss on Sample 5 (250–499 band A/E 0.977) doesn't recur. By sample, the band's claims A/E
+is 0.995, 1.007, 0.977 and 1.002 (Samples 3–6); pooled over 188 groups it's 0.995 [0.987–1.004].
+Three pre-registered rounds tested five bands each, so one 95% interval excluding 1 by chance is
+expected. Group A/E is unrelated to how many states a group spans (r = 0.003) or to log group size
+(r = −0.03). Treated as chance; no change.

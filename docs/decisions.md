@@ -161,3 +161,10 @@ predictions hit. The model of record now simulates member costs by resampling ac
 ratios from Samples 3–5 within tenths of predicted cost (`residual_pool`). `pricing_variants`
 keeps the earlier record as `record_v2` (Tweedie simulation). With no pool files present (fresh
 clone, synthetic mode), empirical variants fall back to Tweedie with a warning.
+
+## 2026-10-06: IBNR by claim type tested, not adopted
+
+Pre-registered in `docs/preregistration_ibnr.md` and run on Sample 6. By-claim-type triangles beat
+the single triangle at both valuations but missed the ±10% bar at 2010-12-31 (+15.7%), so the
+single triangle stays the method of record. Reports now show both methods (`ibnr.methods`).
+The 250–499 band miss on Sample 5 was checked post hoc across Samples 3–6 and treated as chance.

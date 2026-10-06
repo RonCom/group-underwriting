@@ -83,10 +83,12 @@ Generalized Pareto above $25,000 on training members' 2009 cost: shape ξ = 0.10
 
 ## Claims runout (IBNR)
 
-| Valuation | Paid to date | Estimated IBNR | Actual IBNR | Error |
-|---|---|---|---|---|
-| 2009-12-31 | $1,419,411,744 | $83,346,901 | $74,946,158 | +11.2% |
-| 2010-12-31 | $1,176,414,298 | $23,841,882 | $19,722,488 | +20.9% |
+| Valuation | Method | Paid to date | Estimated IBNR | Actual IBNR | Error |
+|---|---|---|---|---|---|
+| 2009-12-31 | By claim type | $1,419,411,744 | $81,380,833 | $74,946,158 | +8.6% |
+| 2009-12-31 | One triangle | $1,419,411,744 | $83,346,901 | $74,946,158 | +11.2% |
+| 2010-12-31 | By claim type | $1,176,414,298 | $19,503,074 | $19,722,488 | -1.1% |
+| 2010-12-31 | One triangle | $1,176,414,298 | $23,841,882 | $19,722,488 | +20.9% |
 
 ![Completion](figures/ibnr_completion.png)
 

@@ -86,7 +86,8 @@ Training: 35,996 members, 2008 features → 2009 cost. Test: 32,833 other member
 | All | 101 | 0.869 | 0.505 [0.498–0.514] | 0.58 [0.57–0.59] | 0.32 [0.23–0.41] |
 
 Other checks: GPD shape ξ = 0.107 above $25k (KS p = 0.30). IBNR error +11.2% (valued
-2009-12-31) and +20.9% (2010-12-31). dbt mart vs Kedro features: all 68,829 rows and 33 columns
+2009-12-31) and +20.9% (2010-12-31) with one triangle; +8.6% and −1.1% with triangles by claim
+type. dbt mart vs Kedro features: all 68,829 rows and 33 columns
 match ([reconciliation](docs/reconciliation.md)). Full real-data run: ~4 minutes on 4 cores.
 
 **Findings**
@@ -291,7 +292,7 @@ tests/
 - [x] Blog post draft for roncom.github.io (`docs/blog/posts/group-underwriting.md`; not yet published to the site)
 - [ ] Publish the blog post
 - [ ] Working-age population: rerun the frozen pipeline on Synthea members (CLAUDE.md fallback)
-- [ ] The 250–499 band runs 2–4% below expected (Sample 5, 2010 relative test); check whether group construction by state and county drives it
-- [ ] IBNR triangles by claim type (tests the inpatient-mix explanation for the IBNR miss)
+- [x] The 250–499 band miss: doesn't recur on Samples 3, 4 or 6 (pooled A/E 0.995 [0.987–1.004]); treated as chance
+- [x] IBNR by claim type, pre-registered on Sample 6: better than one triangle (+15.7% vs +24.5% at 2010-12-31) but missed the ±10% bar; not adopted. An upward bias remains in both
 - [ ] Drop "distinct drugs" (duplicates "fills" in DE-SynPUF)
 - [ ] Manually triggered CI job for the Snowflake pipeline using repository secrets
