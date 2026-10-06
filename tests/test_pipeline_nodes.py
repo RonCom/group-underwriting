@@ -188,3 +188,64 @@ def test_price_variants_applies_level_factor_and_tail_choice():
     assert out.loc[("a", "G1"), "expected_specific"] == pytest.approx(60 * 100)
     assert out.loc[("b", "G1"), "expected_specific"] == pytest.approx(60 * 60)
     assert out.loc[("a", "G2"), "actual_claims"] == pytest.approx(60 * 5000)
+
+
+def test_empirical_draws_resample_ratios_within_bands():
+    from group_underwriting.pipelines.pricing.nodes import _empirical_draws
+
+    pool = pd.DataFrame(
+        {
+            "band_lo": [-np.inf] * 3 + [1000.0] * 3,
+            "ratio": [0.0, 1.0, 2.0, 10.0, 10.0, 10.0],
+        }
+    )
+    rng = np.random.default_rng(0)
+    pred = np.array([500.0, 5000.0])
+    draws = _empirical_draws(rng, pred, np.array([1.0, 0.5]), pool, 4000)
+    assert set(np.unique(draws[:, 0])) == {0.0, 500.0, 1000.0}  # low band ratios x 500
+    assert np.all(draws[:, 1] == 10 * 5000 * 0.5)  # high band, exposure 0.5
+    assert draws[:, 0].mean() == pytest.approx(500, rel=0.05)
+
+
+def test_empirical_variant_falls_back_to_tweedie_without_pool():
+    n = 60
+    feats = pd.DataFrame(
+        {
+            "member_id": [f"m{i}" for i in range(n)],
+            "split": "test",
+            "group_id": "G1",
+            "size_band": "50-99",
+            "exposure": 1.0,
+            "target_cost": 5000.0,
+        }
+    )
+    preds = feats[["member_id", "split"]].assign(pred_glm=5000.0, pred_gbm=5000.0)
+    exc = feats[["member_id", "split"]].assign(exp_excess_glm_25000=100.0)
+    variant = {
+        "label": "e",
+        "cost": "gbm",
+        "claimant": "glm",
+        "tail": "single",
+        "calibrate": False,
+        "simulation": "empirical",
+    }
+    args = (
+        feats,
+        preds,
+        exc,
+        exc,
+        {"tweedie_power": 1.5, "phi": {"glm": 50.0, "gbm": 50.0}},
+        pd.DataFrame({"model": ["glm", "gbm"], "factor": [1.0, 1.0]}),
+        {"e": variant},
+        {
+            "seed": 0,
+            "n_sims": 50,
+            "aggregate_corridor": 1.25,
+            "load": 0.15,
+            "specific_deductible_by_band": {"50-99": 25000},
+        },
+    )
+    empty = pd.DataFrame({"band_lo": [], "ratio": []})
+    a = price_variants(*args, empty)
+    b = price_variants(*args)
+    pd.testing.assert_frame_equal(a, b)
