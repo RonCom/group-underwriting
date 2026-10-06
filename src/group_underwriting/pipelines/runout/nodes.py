@@ -29,7 +29,7 @@ def _factors(cum: np.ndarray, observed: np.ndarray) -> np.ndarray:
     return f
 
 
-def estimate_ibnr(claims: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _chain_ladder(claims: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     c = claims.assign(
         inc=_month_index(pd.to_datetime(claims["from_dt"])),
         paid=_month_index(pd.to_datetime(claims["paid_dt"])),
@@ -82,3 +82,20 @@ def estimate_ibnr(claims: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, pd.
     res["estimated_ibnr"] = res["estimated_ultimate"] - res["paid_to_date"]
     res["actual_ibnr"] = res["actual_ultimate"] - res["paid_to_date"]
     return pd.concat(factor_rows, ignore_index=True), res
+
+
+def estimate_ibnr(claims: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Completion factors (single triangle) and IBNR estimates per method.
+
+    Methods (`params["methods"]`, default both): `single`, one triangle over all claims;
+    `by_source`, one triangle per claim type with estimates summed by incurred month.
+    """
+    factors, single = _chain_ladder(claims, params)
+    out = [single.assign(method="single")]
+    methods = params.get("methods", ["single", "by_source"])
+    if "by_source" in methods and "source" in claims.columns:
+        parts = [_chain_ladder(d, params)[1] for _, d in claims.groupby("source", observed=True)]
+        keys = ["valuation_date", "incurred_month", "lag_at_valuation"]
+        summed = pd.concat(parts).groupby(keys, as_index=False).sum(numeric_only=True)
+        out.append(summed.assign(method="by_source"))
+    return factors, pd.concat(out, ignore_index=True)
