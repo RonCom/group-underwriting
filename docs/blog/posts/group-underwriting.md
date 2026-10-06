@@ -6,7 +6,7 @@ authors:
 categories:
   - Healthcare
   - Insurance pricing
-description: Pricing stop-loss for employer groups from member-level claims, tested on four independent synthetic Medicare populations against predictions written down first.
+description: Pricing stop-loss for employer groups from member-level claims, tested on five independent synthetic Medicare populations against predictions written down first.
 ---
 
 # Pricing stop-loss for employer groups from claims data
@@ -19,17 +19,17 @@ that cost sits in the tail?
 
 I built a pipeline that answers both from member-level medical and pharmacy claims, prices
 synthetic employer groups, and then checks the price against what the groups cost the
-following year. The first test missed on price level; three more rounds on new populations found
+following year. The first test missed on price level; four more rounds on new populations found
 why and settled the model of record.
 
 <!-- more -->
 
 !!! abstract "TL;DR"
-    - **Data:** CMS DE-SynPUF synthetic Medicare claims (inpatient, outpatient, professional and Part D), 2008–2010, four independent samples (Samples 2–5), cut into synthetic employer groups of 50–2,500 lives.
+    - **Data:** CMS DE-SynPUF synthetic Medicare claims (inpatient, outpatient, professional and Part D), 2008–2010, five independent samples (Samples 2–6), cut into synthetic employer groups of 50–2,500 lives.
     - **Method:** point-in-time features with claims runout, a Tweedie GLM baseline against Tweedie LightGBM for next-year cost, high-cost-claimant probabilities at $25k / $50k / $100k, a generalized Pareto tail, and Monte Carlo pricing of specific and aggregate stop-loss per group.
     - **Result:** on populations no model had seen, group claims came in at **0.995–1.00 of expected** across ~205 groups per sample. The final configuration hit **0.999 [0.990–1.007]** on the last holdout.
     - **What the first test got wrong:** the out-of-time year (2010) came in at 0.58 of expected because DE-SynPUF's 2010 claims are 36% thinner than 2009's, a data artifact no pricing method could foresee.
-    - **What changed along the way:** LightGBM replaced the GLM only after its gain replicated on a second unseen sample; a second Pareto segment above $100k fixed a 30% overstatement of far-tail losses; one level factor fixed LightGBM's 2% low bias.
+    - **What changed along the way:** LightGBM replaced the GLM only after its gain replicated on a second unseen sample; a second Pareto segment above $100k fixed a 30% overstatement of far-tail losses; one level factor fixed LightGBM's 2% low bias; resampling actual-to-predicted ratios fixed a simulated spread of group totals that was 1.3× too wide and had the aggregate layer priced 4.5× too high.
     - **Stack:** Python, Kedro, LightGBM, DuckDB and Snowflake, dbt (reconciled row for row with the Python features), MLflow, uv. Code: [github.com/RonCom/group-underwriting](https://github.com/RonCom/group-underwriting).
 
 !!! warning "Synthetic Medicare data, synthetic employers"
@@ -84,7 +84,7 @@ metrics and **groups** for group metrics, never rows.
 
 The same rule as in my [Medicare provider project](medicare-fwa.md): before each test, I committed
 predictions and adoption rules to the repository. A challenger replaces the frozen baseline only if
-its gain clears zero; every miss gets reported. Four rounds, four pre-registrations:
+its gain clears zero; every miss gets reported. Five rounds, five pre-registrations:
 
 | Round | Data | Predictions hit |
 |---|---|---|
@@ -92,6 +92,7 @@ its gain clears zero; every miss gets reported. Four rounds, four pre-registrati
 | 2. Follow-up | Sample 3 (new members), 2008 → 2009 | 10 of 12 |
 | 3. Re-test | Sample 4, 2008 → 2009 | 8 of 9 |
 | 4. Holdout | Sample 5, 2008 → 2009 | 6 of 7 |
+| 5. Aggregate layer | Sample 6, 2008 → 2009 | 5 of 5 |
 
 ## Round 1: ranking works, level misses
 
@@ -167,6 +168,30 @@ Pareto tail.
 The one miss: groups of 250–499 lives came in 2% below expected with every configuration. I
 don't know why yet.
 
+## Round 5: the aggregate layer
+
+Aggregate attachments were breached at or below the expected rate on Samples 3, 4 and 5 (pooled:
+4 observed against 7.6 expected). Breaches are too rare to test directly, so I tested the whole
+simulated distribution of each group's net claims instead. For each group, the PIT value is the
+share of its simulated net claims below its actual net claims. If the simulation has the right
+spread, PIT values are uniform across groups, with variance 1/12 = 0.083; a spread that's too wide
+pushes them toward 0.5 and the variance down.
+
+The Tweedie simulation gave PIT variances of 0.058–0.066 on the three seen samples: its spread was
+about 1.3× too wide, because its dispersion came from uncapped costs. The challenger draws each
+member's cost as predicted cost × an actual-to-predicted ratio resampled from already-seen members
+in the same tenth of predicted cost. I wrote down five predictions and ran both on Sample 6
+(72,216 new members, 206 groups):
+
+| Member-cost simulation | PIT variance | Mean squared z (target 1) | Expected aggregate cost PMPM |
+|---|---|---|---|
+| Tweedie | 0.060 [0.052–0.067] | 0.58 [0.48–0.71] | $0.109 |
+| Resampled ratios | 0.083 [0.072–0.091] | 0.95 [0.79–1.14] | $0.024 |
+
+All five predictions hit, and the resampled ratios replaced Tweedie. The aggregate layer's
+expected cost drops 78%: with a 125% corridor, a breach needs net claims 25% above expected, and
+the narrower distribution puts less probability there.
+
 ## Small groups have the widest loss-ratio swings
 
 A few large claimants move a 60-life group's loss ratio much more than a 2,000-life group's:
@@ -176,11 +201,6 @@ A few large claimants move a 60-life group's loss ratio much more than a 2,000-l
 The 50–99 band's interval is 2.3–3.5× as wide as the 1,000+ band's on Samples 3–5, and 5.5× as
 wide on Sample 2. A lower specific deductible caps how much of that swing the employer keeps, so
 the deductible here steps from $25k for 50–99 lives to $100k for 500+.
-
-Aggregate attachments were breached at or below the expected rate in all three complete-year runs
-(pooled: 4 observed against 7.6 expected, Poisson P(≤ 4) = 0.12). That's not significant, and the
-direction is the same each time. If it holds, the Tweedie simulation that spreads group totals is
-too wide and the aggregate layer is priced a little high.
 
 ## Explaining a group's price
 
@@ -218,5 +238,7 @@ cost, ahead of any single chronic condition.
   run-in / run-out contract terms.
 - **Paid dates are simulated,** so the runout and IBNR results test the chain-ladder method
   against lags I chose. The estimate missed its ±10% target (+11% and +21%).
+- **Independent groups.** The simulation draws members independently within a group, so it
+  can't represent correlated claims (an outbreak, a plant closure) that real employers have.
 - **2010 is unusable for levels** in DE-SynPUF, so the out-of-time test only checks ranking; the
   level tests are same-period tests on independent populations.

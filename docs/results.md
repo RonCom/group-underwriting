@@ -1,6 +1,6 @@
 # Results (real data)
 
-Generated 2026-10-05 by `kedro run`. Do not edit by hand.
+Generated 2026-10-06 by `kedro run`. Do not edit by hand.
 
 Training: 35,996 members, features 2008 -> cost 2009. Test: 32,833 different members in 101 synthetic groups, features 2009 -> cost 2010. Intervals are 95% bootstrap intervals that resample members (member metrics) or groups (group metrics).
 
@@ -106,12 +106,18 @@ Generalized Pareto above $25,000 on training members' 2009 cost: shape ξ = 0.10
 | Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | 500-999 | 8 | 6,018 | 0.870 | 0.513 [0.506–0.520] | 0.59 [0.58–0.60] | 0.21 [0.00–0.49] | 0 (0.0) |
 | Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | 1000-2500 | 5 | 10,162 | 0.870 | 0.491 [0.483–0.496] | 0.56 [0.56–0.57] | 0.00 [0.00–0.00] | 0 (0.0) |
 | Record before Sample 5: LightGBM cost, logistic claimants, spliced tail | All | 101 | 32,833 | 0.869 | 0.501 [0.494–0.510] | 0.58 [0.57–0.59] | 0.33 [0.24–0.42] | 0 (1.6) |
-| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 50-99 | 28 | 2,095 | 0.868 | 0.528 [0.493–0.572] | 0.61 [0.57–0.66] | 0.53 [0.35–0.74] | 0 (1.0) |
-| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 100-249 | 37 | 5,950 | 0.869 | 0.510 [0.488–0.535] | 0.59 [0.56–0.62] | 0.27 [0.13–0.47] | 0 (0.6) |
-| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 250-499 | 23 | 8,608 | 0.870 | 0.476 [0.463–0.490] | 0.55 [0.53–0.56] | 0.25 [0.17–0.34] | 0 (0.0) |
-| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 500-999 | 8 | 6,018 | 0.870 | 0.504 [0.497–0.511] | 0.58 [0.57–0.59] | 0.21 [0.00–0.49] | 0 (0.0) |
-| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | 1000-2500 | 5 | 10,162 | 0.870 | 0.482 [0.475–0.487] | 0.55 [0.55–0.56] | 0.00 [0.00–0.00] | 0 (0.0) |
-| Model of record: recalibrated LightGBM cost, logistic claimants, spliced tail | All | 101 | 32,833 | 0.869 | 0.492 [0.485–0.501] | 0.57 [0.56–0.58] | 0.33 [0.24–0.42] | 0 (1.6) |
+| Record before Sample 6: recalibrated LightGBM, logistic, spliced tail, Tweedie simulation | 50-99 | 28 | 2,095 | 0.868 | 0.528 [0.493–0.572] | 0.61 [0.57–0.66] | 0.53 [0.35–0.74] | 0 (1.0) |
+| Record before Sample 6: recalibrated LightGBM, logistic, spliced tail, Tweedie simulation | 100-249 | 37 | 5,950 | 0.869 | 0.510 [0.488–0.535] | 0.59 [0.56–0.62] | 0.27 [0.13–0.47] | 0 (0.6) |
+| Record before Sample 6: recalibrated LightGBM, logistic, spliced tail, Tweedie simulation | 250-499 | 23 | 8,608 | 0.870 | 0.476 [0.463–0.490] | 0.55 [0.53–0.56] | 0.25 [0.17–0.34] | 0 (0.0) |
+| Record before Sample 6: recalibrated LightGBM, logistic, spliced tail, Tweedie simulation | 500-999 | 8 | 6,018 | 0.870 | 0.504 [0.497–0.511] | 0.58 [0.57–0.59] | 0.21 [0.00–0.49] | 0 (0.0) |
+| Record before Sample 6: recalibrated LightGBM, logistic, spliced tail, Tweedie simulation | 1000-2500 | 5 | 10,162 | 0.870 | 0.482 [0.475–0.487] | 0.55 [0.55–0.56] | 0.00 [0.00–0.00] | 0 (0.0) |
+| Record before Sample 6: recalibrated LightGBM, logistic, spliced tail, Tweedie simulation | All | 101 | 32,833 | 0.869 | 0.492 [0.485–0.501] | 0.57 [0.56–0.58] | 0.33 [0.24–0.42] | 0 (1.6) |
+| Model of record: recalibrated LightGBM, logistic, spliced tail, empirical simulation | 50-99 | 28 | 2,095 | 0.869 | 0.529 [0.493–0.573] | 0.61 [0.57–0.66] | 0.53 [0.35–0.74] | 0 (0.3) |
+| Model of record: recalibrated LightGBM, logistic, spliced tail, empirical simulation | 100-249 | 37 | 5,950 | 0.869 | 0.510 [0.489–0.536] | 0.59 [0.56–0.62] | 0.27 [0.13–0.47] | 0 (0.2) |
+| Model of record: recalibrated LightGBM, logistic, spliced tail, empirical simulation | 250-499 | 23 | 8,608 | 0.870 | 0.476 [0.463–0.490] | 0.55 [0.53–0.56] | 0.25 [0.17–0.34] | 0 (0.0) |
+| Model of record: recalibrated LightGBM, logistic, spliced tail, empirical simulation | 500-999 | 8 | 6,018 | 0.870 | 0.504 [0.497–0.511] | 0.58 [0.57–0.59] | 0.21 [0.00–0.49] | 0 (0.0) |
+| Model of record: recalibrated LightGBM, logistic, spliced tail, empirical simulation | 1000-2500 | 5 | 10,162 | 0.870 | 0.482 [0.475–0.487] | 0.55 [0.55–0.56] | 0.00 [0.00–0.00] | 0 (0.0) |
+| Model of record: recalibrated LightGBM, logistic, spliced tail, empirical simulation | All | 101 | 32,833 | 0.870 | 0.493 [0.485–0.501] | 0.57 [0.56–0.58] | 0.33 [0.24–0.42] | 0 (0.4) |
 
 ![Group A/E](figures/group_actual_to_expected.png)
 

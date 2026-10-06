@@ -142,3 +142,26 @@ members, none in Samples 2–4; 205 groups), 2008 features → 2009 cost. Full t
   Poisson P(≤ 4) = 0.12). Not significant, but the direction is consistent: the Tweedie
   simulation may be too wide (post hoc).
 - The 250–499 band runs 2% below expected with every variant; the cause isn't established.
+
+# Aggregate-layer simulation (pre-registered in `docs/preregistration_aggregate.md`)
+
+Run 2026-10-06: DE-SynPUF Sample 6 (72,216 members, none in Samples 2–5; 206 groups), 2008 features
+→ 2009 cost, model of record with two ways of simulating member costs. Full tables:
+[`aggtest/results.md`](aggtest/results.md). **5 of 5 predictions hit.**
+
+| # | Prediction | Result | Verdict |
+|---|---|---|---|
+| A1 | Tweedie PIT variance 0.050–0.072, interval below 0.0833 | 0.0599 [0.0521–0.0674] | Hit |
+| A2 | Empirical PIT variance 0.074–0.093, interval covers 0.0833 | 0.0825 [0.0717–0.0914] | Hit |
+| A3 | Mean squared z: Tweedie interval below 1, empirical covers 1 | 0.58 [0.48–0.71]; 0.95 [0.79–1.14] | Hit |
+| A4 | Empirical breaches within 95% Poisson range | 0 observed, 1.0 expected (range 0–3) | Hit |
+| A5 | Empirical expected aggregate cost below 40% of Tweedie's | $0.024 vs $0.109 PMPM (22%) | Hit |
+| Rule | Adopt empirical simulation if A2 and empirical A3 hold | Both hold | **Empirical simulation adopted** |
+
+**Reading.**
+- The Tweedie simulation's spread of group net claims is about 1.3× too wide (mean squared z 0.58
+  means actual deviations are √0.58 ≈ 0.76 of the simulated standard deviation). Resampling
+  actual-to-predicted ratios from seen members gets the spread right on a sample it never saw.
+- The aggregate layer's expected cost falls by about 78% under the adopted simulation. With a
+  125% corridor, a breach needs a group's net claims 25% above expected, which the narrower
+  distribution makes rarer: expected breaches drop from 3.1 to 1.0 on Sample 6.

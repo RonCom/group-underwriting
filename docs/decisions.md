@@ -152,3 +152,12 @@ fixes were needed for Snowflake, both applied to the shared models: a CTE named 
 Snowflake) became `cohort`, and a `SELECT r.member_id, ..., c.*` that duplicated `member_id` now
 lists the claim columns. The DuckDB build was rerun after the fixes and still matches the Kedro
 features; Snowflake matches DuckDB on every row and column.
+
+## 2026-10-06: aggregate-layer simulation, empirical ratios adopted
+
+Pre-registered in `docs/preregistration_aggregate.md` after a post-hoc diagnostic on Samples 3–5
+(`scripts/aggregate_diagnostic.py`), run on Sample 6 in the `aggtest` environment. All five
+predictions hit. The model of record now simulates member costs by resampling actual / predicted
+ratios from Samples 3–5 within tenths of predicted cost (`residual_pool`). `pricing_variants`
+keeps the earlier record as `record_v2` (Tweedie simulation). With no pool files present (fresh
+clone, synthetic mode), empirical variants fall back to Tweedie with a warning.
