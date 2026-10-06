@@ -80,6 +80,7 @@ def test_chain_ladder_recovers_ultimate_for_a_fixed_lag_pattern():
         pd.DataFrame(rows),
         {"valuation_dates": ["2009-12-31"], "history_months": 24, "max_lag_months": 4},
     )
+    est = est[est["method"] == "single"]
     np.testing.assert_allclose(est["estimated_ultimate"], est["actual_ultimate"], rtol=1e-9)
     np.testing.assert_allclose(factors["completion"].iloc[:3], [0.5, 0.8, 1.0], rtol=1e-9)
 
@@ -249,3 +250,32 @@ def test_empirical_variant_falls_back_to_tweedie_without_pool():
     a = price_variants(*args, empty)
     b = price_variants(*args)
     pd.testing.assert_frame_equal(a, b)
+
+
+def test_ibnr_by_source_recovers_ultimate_when_mix_shifts():
+    # slow-paying IP shrinks over time while fast RX grows: a pooled triangle is biased,
+    # separate triangles are exact
+    rows = []
+    for k, inc in enumerate(pd.date_range("2008-01-01", "2009-12-01", freq="MS")):
+        for src, total, shares in (
+            ("IP", 1000 - 30 * k, [0.2, 0.3, 0.5]),
+            ("RX", 200 + 40 * k, [0.9, 0.1, 0.0]),
+        ):
+            for lag, share in enumerate(shares):
+                rows.append(
+                    {
+                        "source": src,
+                        "from_dt": inc,
+                        "paid_dt": inc + pd.DateOffset(months=lag),
+                        "allowed": total * share,
+                    }
+                )
+    _, est = estimate_ibnr(
+        pd.DataFrame(rows),
+        {"valuation_dates": ["2009-12-31"], "history_months": 24, "max_lag_months": 4},
+    )
+    tot = est.groupby("method")[["estimated_ibnr", "actual_ibnr"]].sum()
+    assert tot.at["by_source", "estimated_ibnr"] == pytest.approx(
+        tot.at["by_source", "actual_ibnr"]
+    )
+    assert abs(tot.at["single", "estimated_ibnr"] / tot.at["single", "actual_ibnr"] - 1) > 0.05

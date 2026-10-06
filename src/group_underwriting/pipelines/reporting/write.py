@@ -263,14 +263,17 @@ def write_results(
         "",
         "## Claims runout (IBNR)",
         "",
-        "| Valuation | Paid to date | Estimated IBNR | Actual IBNR | Error |",
-        "|---|---|---|---|---|",
+        "| Valuation | Method | Paid to date | Estimated IBNR | Actual IBNR | Error |",
+        "|---|---|---|---|---|---|",
     ]
-    for v, d in ibnr.groupby("valuation_date"):
+    if "method" not in ibnr.columns:
+        ibnr = ibnr.assign(method="single")
+    names = {"single": "One triangle", "by_source": "By claim type"}
+    for (v, m), d in ibnr.groupby(["valuation_date", "method"]):
         est, act = d["estimated_ibnr"].sum(), d["actual_ibnr"].sum()
         L.append(
-            f"| {v} | ${d['paid_to_date'].sum():,.0f} | ${est:,.0f} | ${act:,.0f} | "
-            f"{est / act - 1:+.1%} |"
+            f"| {v} | {names.get(m, m)} | ${d['paid_to_date'].sum():,.0f} | ${est:,.0f} | "
+            f"${act:,.0f} | {est / act - 1:+.1%} |"
         )
     L += [
         "",
