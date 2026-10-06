@@ -68,3 +68,15 @@ residual_pool:
   cost: gbm
   level_factor: 1.0
   n_bands: 10
+
+snowflake:
+  raw_dir: ${runtime_params:data_root,${globals:data_root}}/01_raw
+  data_root: ${runtime_params:data_root,${globals:data_root}}
+  duckdb_path: ${runtime_params:data_root,${globals:data_root}}/05_model_input/warehouse.duckdb
+  user: GU_SVC
+  role: GU_ROLE
+  warehouse: GU_WH
+  database: GROUP_UNDERWRITING_CI
+  runout_months: 3
+  specialty_rx_threshold: 1000
+  report_file: docs/synthetic/reconciliation_snowflake.md

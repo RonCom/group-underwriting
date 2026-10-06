@@ -1,0 +1,33 @@
+name: Snowflake
+
+# Manual run: builds the synthetic data set, loads it into a separate CI database in Snowflake,
+# runs dbt there and reconciles against DuckDB. Needs repository secrets SNOWFLAKE_ACCOUNT,
+# SNOWFLAKE_USER and SNOWFLAKE_PRIVATE_KEY, and the CI database from snowflake/setup.sql.
+on:
+  workflow_dispatch:
+
+jobs:
+  snowflake:
+    runs-on: ubuntu-latest
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_DATABASE: GROUP_UNDERWRITING_CI
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --extra dbt --extra snowflake
+      - name: Synthetic data, features and DuckDB warehouse
+        run: |
+          uv run kedro run --env synthetic --pipeline synthetic
+          uv run kedro run --env synthetic --to-nodes build_features
+          uv run kedro run --env synthetic --pipeline warehouse
+      - name: Snowflake load, dbt build, reconciliation
+        run: uv run kedro run --env synthetic --pipeline snowflake
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snowflake-reconciliation
+          path: docs/synthetic/reconciliation_snowflake.md
